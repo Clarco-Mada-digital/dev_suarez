@@ -1,6 +1,6 @@
 import { Variants } from "framer-motion";
 
-export const fadeIn = (direction: string, type: string, delay: number, duration: number): Variants => ({
+export const fadeIn = (direction: string, type: 'tween' | 'spring' | 'inertia' | 'keyframes' | undefined = 'tween', delay: number, duration: number): Variants => ({
   hidden: {
     x: direction === "left" ? 100 : direction === "right" ? -100 : 0,
     y: direction === "up" ? 100 : direction === "down" ? -100 : 0,

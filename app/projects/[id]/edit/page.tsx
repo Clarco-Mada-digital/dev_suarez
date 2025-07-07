@@ -29,13 +29,19 @@ interface Category {
   name: string;
 }
 
-export default function NewProjectPage() {
+interface ProjectData extends ProjectFormValues {
+  id: string;
+  skills: string[];
+}
+
+export default function EditProjectPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const { userId, isLoaded } = useAuth();
+  const { userId } = useAuth();
   const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [project, setProject] = useState<ProjectData | null>(null);
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
@@ -50,42 +56,53 @@ export default function NewProjectPage() {
   });
 
   useEffect(() => {
-    if (isLoaded && !userId) {
+    if (!userId) {
       router.push('/sign-in');
       return;
     }
 
-    if (isLoaded && userId) {
-      const fetchCategories = async () => {
-        try {
-          const response = await fetch('/api/projects/categories');
-          if (response.ok) {
-            const data = await response.json();
-            setCategories(data);
-          }
-        } catch (error) {
-          console.error('Error fetching categories:', error);
-        } finally {
-          setIsLoading(false);
+    const fetchData = async () => {
+      try {
+        // Récupérer les catégories
+        const categoriesRes = await fetch('/api/projects/categories');
+        if (categoriesRes.ok) {
+          const categoriesData = await categoriesRes.json();
+          setCategories(categoriesData);
         }
-      };
 
-      fetchCategories();
-    }
-  }, [isLoaded, userId, router]);
+        // Récupérer les détails du projet
+        const projectRes = await fetch(`/api/projects/${params.id}`);
+        if (projectRes.ok) {
+          const projectData = await projectRes.json();
+          setProject(projectData);
+          
+          // Mettre à jour le formulaire avec les données du projet
+          form.reset({
+            title: projectData.title,
+            description: projectData.description,
+            budget: projectData.budget,
+            deadline: new Date(projectData.deadline).toISOString().split('T')[0],
+            categoryId: projectData.categoryId,
+            skills: projectData.skills?.map((s: any) => s.name).join(', ') || '',
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast({
+          title: 'Erreur',
+          description: 'Une erreur est survenue lors du chargement des données',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [userId, router, params.id, form, toast]);
 
   async function onSubmit(values: ProjectFormValues) {
-    console.log('Formulaire soumis avec les valeurs:', values);
-    
-    if (!userId) {
-      console.log('Utilisateur non connecté');
-      toast({
-        title: 'Erreur',
-        description: 'Vous devez être connecté pour publier un projet',
-        variant: 'destructive',
-      });
-      return;
-    }
+    if (!userId || !project) return;
 
     try {
       setIsSubmitting(true);
@@ -94,9 +111,8 @@ export default function NewProjectPage() {
         ? values.skills.split(',').map(skill => skill.trim()).filter(Boolean)
         : [];
 
-      console.log('Envoi de la requête au serveur...');
-      const response = await fetch('/api/projects', {
-        method: 'POST',
+      const response = await fetch(`/api/projects/${params.id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -108,21 +124,19 @@ export default function NewProjectPage() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Erreur de la réponse du serveur:', errorText);
-        throw new Error('Une erreur est survenue lors de la création du projet: ' + errorText);
+        throw new Error(errorText || 'Une erreur est survenue lors de la mise à jour du projet');
       }
-
-      const data = await response.json();
       
       toast({
-        title: 'Projet créé avec succès',
-        description: 'Votre projet a été publié et est maintenant visible par les freelances.',
+        title: 'Projet mis à jour',
+        description: 'Votre projet a été mis à jour avec succès',
       });
 
-      // Redirect to the new project page
-      router.push(`/projects/${data.projectId}`);
+      // Rediriger vers la page du projet
+      router.push(`/projects/${params.id}`);
+      router.refresh();
     } catch (error) {
-      console.error('Error creating project:', error);
+      console.error('Error updating project:', error);
       toast({
         title: 'Erreur',
         description: error instanceof Error ? error.message : 'Une erreur est survenue',
@@ -133,14 +147,18 @@ export default function NewProjectPage() {
     }
   }
 
-  if (!isLoaded || isLoading) {
+  if (isLoading) {
     return <div className="container mx-auto px-4 py-8">Chargement...</div>;
+  }
+
+  if (!project) {
+    return <div className="container mx-auto px-4 py-8">Projet non trouvé</div>;
   }
 
   return (
     <div className="container mx-auto px-4 py-20">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Publier un nouveau projet</h1>
+        <h1 className="text-3xl font-bold mb-6">Modifier le projet</h1>
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -261,13 +279,13 @@ export default function NewProjectPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.push('/projects')}
+                onClick={() => router.push(`/projects/${params.id}`)}
                 disabled={isSubmitting}
               >
                 Annuler
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Publication en cours...' : 'Publier le projet'}
+                {isSubmitting ? 'Enregistrement...' : 'Enregistrer les modifications'}
               </Button>
             </div>
           </form>

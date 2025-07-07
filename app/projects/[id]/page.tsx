@@ -8,6 +8,7 @@ import { auth } from '@clerk/nextjs/server';
 import { ProjectBidForm } from '@/components/projects/ProjectBidForm';
 import { prisma } from '@/lib/prisma';
 import { HeroSection } from '@/components/HeroSection';
+import Image from 'next/image';
 
 export default async function ProjectPage({ params }: { params: { id: string } }) {
   const { userId } = auth();
@@ -102,39 +103,73 @@ export default async function ProjectPage({ params }: { params: { id: string } }
             </Card>
           </div>
           
-          {/* Colonne de droite - Détails et formulaire de candidature */}
+          {/* Colonne de droite - Actions et détails */}
           <div className="space-y-6">
-            {/* Détails du projet */}
+            {/* Carte Actions */}
+            {isClient && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Actions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <Button asChild className="w-full">
+                      <a href={`/projects/${project.id}/edit`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                        </svg>
+                        Modifier le projet
+                      </a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Carte Détails du projet */}
             <Card>
               <CardHeader>
                 <CardTitle>Détails du projet</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Budget</h3>
-                  <p className="text-lg font-semibold">{project.budget} €</p>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Date limite</h3>
-                  <p>{format(new Date(project.deadline), 'PPP', { locale: fr })}</p>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Client</h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    {project.client.image ? (
-                      <img
-                        src={project.client.image}
-                        alt={project.client.name}
-                        className="h-8 w-8 rounded-full"
-                      />
-                    ) : (
-                      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                        <span className="text-sm">{project.client.name.charAt(0)}</span>
-                      </div>
-                    )}
-                    <span>{project.client.name}</span>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Budget</span>
+                    <span className="font-medium">{project.budget} €</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Date limite</span>
+                    <span className="font-medium">
+                      {format(new Date(project.deadline), 'dd MMM yyyy', { locale: fr })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Statut</span>
+                    <Badge variant="outline">{project.status}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t mt-2">
+                    <span className="text-sm text-muted-foreground">Client</span>
+                    <div className="flex items-center gap-2">
+                      {project.client?.image ? (
+                        <div className="relative h-6 w-6 rounded-full overflow-hidden">
+                          <Image
+                            src={project.client.image}
+                            alt={project.client?.name || 'Client'}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center">
+                          <span className="text-xs">
+                            {project.client?.name?.charAt(0).toUpperCase() || 'C'}
+                          </span>
+                        </div>
+                      )}
+                      <span className="text-sm font-medium">
+                        {project.client?.name || 'Client'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </CardContent>

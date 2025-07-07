@@ -20,7 +20,7 @@ interface ProjectCardProps {
     };
     client: {
       id: string;
-      name: string;
+      name: string | null;
       image: string | null;
     };
     skills: Array<{

@@ -27,8 +27,8 @@ export default async function ProjectsPage({
       status: 'OPEN',
       ...(query && {
         OR: [
-          { title: { contains: query, mode: 'insensitive' } },
-          { description: { contains: query, mode: 'insensitive' } },
+          { title: { contains: query.toLowerCase() } },
+          { description: { contains: query.toLowerCase() } },
         ],
       }),
       ...(category && { categoryId: category }),

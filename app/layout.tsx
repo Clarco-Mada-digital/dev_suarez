@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Comfortaa } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import Header from "@/components/Header";
@@ -8,8 +7,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { frFR } from "@clerk/localizations";
 import Footer from "@/components/Footer";
-
-const comfortaa = Comfortaa({ subsets: ["latin"], variable: "--font-comfortaa" });
+import { comfortaa } from "@/lib/fonts";
 
 export const metadata: Metadata = {
   title: "D.S by MADA-Digital",
@@ -24,9 +22,9 @@ export default function RootLayout({
   return (
     <ClerkProvider appearance={{
       baseTheme: dark,
-    }} localization={frFR} >
+    }} localization={frFR}>
       <html lang="fr">
-        <body className={cn(comfortaa.variable)}>
+        <body style={comfortaa.style} className={comfortaa.variable}>
           <ThemeProvider defaultTheme="dark" attribute="class" enableSystem>
             {/* Header */}
             <Header />

@@ -298,7 +298,11 @@ export default function CategoryPage({
 
   return (
     <div className="min-h-screen">
-      <CategoryBanner category={category} />
+      <CategoryBanner 
+        name={bannerData.name} 
+        description={bannerData.description} 
+        imageUrl={bannerData.imageUrl} 
+      />
       <div className="container mx-auto px-4 py-8">
         {/* Fil d'Ariane */}
         <Breadcrumb 
@@ -312,7 +316,7 @@ export default function CategoryPage({
         
         <div className="py-4">
           <Suspense fallback={<LoadingSkeleton />}>
-            <CategoryDetail 
+            <CategoryDetail
               category={{
                 ...category,
                 freelancers: paginatedFreelancers,
@@ -322,8 +326,7 @@ export default function CategoryPage({
                   totalItems,
                   itemsPerPage
                 }
-              }} 
-              searchParams={searchParams}
+              }}
             />
           </Suspense>
         </div>

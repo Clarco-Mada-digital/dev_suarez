@@ -14,6 +14,12 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'randomuser.me',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   // Configuration expérimentale
@@ -32,6 +38,12 @@ const nextConfig = {
     }
     return config;
   },
+  // Configuration pour Clerk
+  clerk: {
+    // Désactive la page de connexion intégrée pour utiliser notre propre page
+    signInUrl: '/sign-in',
+    signUpUrl: '/sign-up',
+  },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

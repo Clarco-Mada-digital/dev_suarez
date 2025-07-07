@@ -27,14 +27,16 @@ export async function GET() {
     console.error('API: Erreur lors de la récupération des catégories', error);
     
     // Vérifier si l'erreur provient de Prisma
-    if (error.code) {
-      console.error('Code d\'erreur Prisma:', error.code);
+    if (error && typeof error === 'object' && 'code' in error) {
+      console.error('Code d\'erreur Prisma:', (error as { code: string }).code);
     }
+    
+    const errorMessage = error instanceof Error ? error.message : 'Une erreur inconnue est survenue';
     
     return NextResponse.json(
       { 
         error: 'Erreur lors de la récupération des catégories',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
       },
       { status: 500 }
     );

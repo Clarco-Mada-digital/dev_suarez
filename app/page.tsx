@@ -10,9 +10,9 @@ import Link from "next/link";
 import { useRef } from "react";
 
 export default function Home() {
-  const listCatRef = useRef(null)
-  const listUserRef = useRef(null)
-  const ScrollRightHandler = (type, direction) => {
+  const listCatRef = useRef<HTMLDivElement>(null)
+  const listUserRef = useRef<HTMLDivElement>(null)
+  const ScrollRightHandler = (type: 'cat' | 'user', direction: 'left' | 'right') => {
     if (type === "cat") {
       if (listCatRef.current) {
         listCatRef.current.scrollBy({
@@ -101,12 +101,72 @@ export default function Home() {
         <div className="relative w-full flex justify-center items-center">
           <ArrowLeftCircle className="absolute left-0 top-[50%] cursor-pointer bg-gray-50 text-blue-400 rounded-full h-8 w-8" onClick={() => { ScrollRightHandler('user', 'right') }} />
           <div className="flex items-center gap-8 mx-10 overflow-x-auto scrollbar-hide" ref={listUserRef}>
-            <CardUser categorie="Dev" name="Jhon Doe" tech={["ReactJS", "NextJS", "VueJS"]} profilImg="/profile.png" dispo={true} />
-            <CardUser categorie="SEO" name="Jannette Doe" tech={["Caneva", "Photoshop"]} profilImg="/user.png" dispo={true} />
-            <CardUser categorie="Dev" name="Jhon Doe" tech={["nextJs", "Laravel"]} profilImg="/profile.png" dispo={true} />
-            <CardUser categorie="SEO" name="Jannette Doe" tech={["Caneva", "Figma"]} profilImg="/user.png" dispo={false} />
-            <CardUser categorie="Dev" name="Jhon Doe" tech={["nextJs", "ReactJs", "VueJS"]} profilImg="/profile.png" dispo={true} />
-            <CardUser categorie="SEO" name="Jannette Doe" tech={["Caneva"]} profilImg="/user.png" dispo={true} />
+            <CardUser 
+              id="1"
+              name="John Doe"
+              jobTitle="Développeur Full Stack"
+              skills={["ReactJS", "NextJS", "VueJS"]}
+              avatarUrl="/profile.png"
+              availability={true}
+              rating={4.8}
+              hourlyRate={50}
+              location="Antananarivo"
+            />
+            <CardUser 
+              id="2"
+              name="Jane Smith"
+              jobTitle="Designer UX/UI"
+              skills={["Figma", "Sketch", "Adobe XD"]}
+              avatarUrl="/user.png"
+              availability={true}
+              rating={4.9}
+              hourlyRate={45}
+              location="Antsirabe"
+            />
+            <CardUser 
+              id="3"
+              name="Robert Johnson"
+              jobTitle="Développeur Backend"
+              skills={["Node.js", "Python", "Docker"]}
+              avatarUrl="/profile.png"
+              availability={true}
+              rating={4.7}
+              hourlyRate={55}
+              location="Toamasina"
+            />
+            <CardUser 
+              id="4"
+              name="Emily Davis"
+              jobTitle="Spécialiste SEO"
+              skills={["SEO", "Analytics", "Content Strategy"]}
+              avatarUrl="/user.png"
+              availability={false}
+              rating={4.6}
+              hourlyRate={40}
+              location="Mahajanga"
+            />
+            <CardUser 
+              id="5"
+              name="Michael Brown"
+              jobTitle="Développeur Mobile"
+              skills={["React Native", "Flutter", "iOS"]}
+              avatarUrl="/profile.png"
+              availability={true}
+              rating={4.8}
+              hourlyRate={60}
+              location="Fianarantsoa"
+            />
+            <CardUser 
+              id="6"
+              name="Sarah Wilson"
+              jobTitle="Marketing Digital"
+              skills={["Social Media", "Email Marketing", "PPC"]}
+              avatarUrl="/user.png"
+              availability={true}
+              rating={4.9}
+              hourlyRate={48}
+              location="Toliara"
+            />
           </div>
           <ArrowRightCircle className="absolute right-0 top-[50%] cursor-pointer bg-gray-50 text-blue-400 rounded-full h-8 w-8" onClick={() => { ScrollRightHandler('user', 'left') }} />
         </div>
