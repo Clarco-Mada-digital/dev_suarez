@@ -1,25 +1,28 @@
 "use client";
 
-import Header from '@/components/Header'
-import ThemeProvider from '@/components/theme/ThemeProvider'
-import { ClerkProvider } from '@clerk/nextjs'
+import Header from '@/components/Header';
+import ThemeProvider from '@/components/theme/ThemeProvider';
 import { frFR } from "@clerk/localizations";
-import { dark, shadesOfPurple } from "@clerk/themes";
-
-import React from 'react'
+import { dark } from "@clerk/themes";
+import React from 'react';
 import { useTheme } from 'next-themes';
+import { AuthProvider } from '@/components/providers/auth-provider';
+import { Toaster } from '@/components/ui/toaster';
 
 const Provider = ({ children }: React.PropsWithChildren<{}>) => {
- 
-  // const clerkTheme = theme ==='dark' ? dark : shadesOfPurple;
-  return (
-    <ClerkProvider localization={frFR} appearance={{baseTheme: dark}}>
-      <ThemeProvider attribute="class" enableSystem defaultTheme="system">
-      <Header />
-        {children}
-      </ThemeProvider>
-    </ClerkProvider>
-  )
-}
+  const { theme } = useTheme();
 
-export default Provider
+  return (
+    <AuthProvider>
+      <ThemeProvider attribute="class" enableSystem defaultTheme="system">
+        <Header />
+        <main className="min-h-screen pt-16">
+          {children}
+        </main>
+        <Toaster />
+      </ThemeProvider>
+    </AuthProvider>
+  );
+};
+
+export default Provider;

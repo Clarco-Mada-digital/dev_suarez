@@ -7,11 +7,15 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeftCircle, ArrowRightCircle, CupSodaIcon, GoalIcon, MedalIcon, NotebookPen, SendIcon, StarIcon, WorkflowIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { UserProfile } from "@/services/userService";
 
 export default function Home() {
   const listCatRef = useRef<HTMLDivElement>(null)
   const listUserRef = useRef<HTMLDivElement>(null)
+  const [freelancers, setFreelancers] = useState<UserProfile[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const ScrollRightHandler = (type: 'cat' | 'user', direction: 'left' | 'right') => {
     if (type === "cat") {
       if (listCatRef.current) {
@@ -31,9 +35,29 @@ export default function Home() {
     }
   }
 
+  useEffect(() => {
+    const fetchFreelancers = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch('/api/users/top-freelancers')
+        if (!response.ok) {
+          throw new Error('Erreur lors du chargement des freelancers')
+        }
+        const data = await response.json()
+        setFreelancers(data)
+      } catch (err) {
+        console.error('Error fetching freelancers:', err)
+        setError('Impossible de charger les freelancers. Veuillez réessayer plus tard.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchFreelancers()
+  }, [])
+
   return (
     <section>
-      {/* <h1>Home Page</h1> */}
       <Presentation />
 
       {/* Slide des categories */}
@@ -99,76 +123,42 @@ export default function Home() {
         <span className="text-xs text-blue-400">Nos freelence</span>
         <h2 className="text-muted-foreground">Les meilleurs experts dans leur domaine</h2>
         <div className="relative w-full flex justify-center items-center">
-          <ArrowLeftCircle className="absolute left-0 top-[50%] cursor-pointer bg-gray-50 text-blue-400 rounded-full h-8 w-8" onClick={() => { ScrollRightHandler('user', 'right') }} />
-          <div className="flex items-center gap-8 mx-10 overflow-x-auto scrollbar-hide" ref={listUserRef}>
-            <CardUser 
-              id="1"
-              name="John Doe"
-              jobTitle="Développeur Full Stack"
-              skills={["ReactJS", "NextJS", "VueJS"]}
-              avatarUrl="/profile.png"
-              availability={true}
-              rating={4.8}
-              hourlyRate={50}
-              location="Antananarivo"
-            />
-            <CardUser 
-              id="2"
-              name="Jane Smith"
-              jobTitle="Designer UX/UI"
-              skills={["Figma", "Sketch", "Adobe XD"]}
-              avatarUrl="/user.png"
-              availability={true}
-              rating={4.9}
-              hourlyRate={45}
-              location="Antsirabe"
-            />
-            <CardUser 
-              id="3"
-              name="Robert Johnson"
-              jobTitle="Développeur Backend"
-              skills={["Node.js", "Python", "Docker"]}
-              avatarUrl="/profile.png"
-              availability={true}
-              rating={4.7}
-              hourlyRate={55}
-              location="Toamasina"
-            />
-            <CardUser 
-              id="4"
-              name="Emily Davis"
-              jobTitle="Spécialiste SEO"
-              skills={["SEO", "Analytics", "Content Strategy"]}
-              avatarUrl="/user.png"
-              availability={false}
-              rating={4.6}
-              hourlyRate={40}
-              location="Mahajanga"
-            />
-            <CardUser 
-              id="5"
-              name="Michael Brown"
-              jobTitle="Développeur Mobile"
-              skills={["React Native", "Flutter", "iOS"]}
-              avatarUrl="/profile.png"
-              availability={true}
-              rating={4.8}
-              hourlyRate={60}
-              location="Fianarantsoa"
-            />
-            <CardUser 
-              id="6"
-              name="Sarah Wilson"
-              jobTitle="Marketing Digital"
-              skills={["Social Media", "Email Marketing", "PPC"]}
-              avatarUrl="/user.png"
-              availability={true}
-              rating={4.9}
-              hourlyRate={48}
-              location="Toliara"
-            />
-          </div>
-          <ArrowRightCircle className="absolute right-0 top-[50%] cursor-pointer bg-gray-50 text-blue-400 rounded-full h-8 w-8" onClick={() => { ScrollRightHandler('user', 'left') }} />
+          <ArrowLeftCircle 
+            className="absolute left-0 top-[50%] cursor-pointer bg-gray-50 text-blue-400 rounded-full h-8 w-8 z-10" 
+            onClick={() => ScrollRightHandler('user', 'right')} 
+          />
+          
+          {isLoading ? (
+            <div className="flex items-center justify-center w-full py-10">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : error ? (
+            <div className="text-red-500 text-center py-10">{error}</div>
+          ) : freelancers.length > 0 ? (
+            <div className="flex items-center gap-8 mx-10 overflow-x-auto scrollbar-hide" ref={listUserRef}>
+              {freelancers.map((freelancer) => (
+                <CardUser 
+                  key={freelancer.id}
+                  id={freelancer.id}
+                  name={freelancer.name}
+                  jobTitle={freelancer.jobTitle || 'Freelance'}
+                  skills={freelancer.skills || []}
+                  avatarUrl={freelancer.image || '/placeholder-user.png'}
+                  availability={freelancer.availability || false}
+                  rating={freelancer.rating || 0}
+                  hourlyRate={freelancer.hourlyRate || 0}
+                  location={freelancer.location || 'Non spécifié'}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-gray-500 text-center py-10">Aucun freelance disponible pour le moment.</div>
+          )}
+          
+          <ArrowRightCircle 
+            className="absolute right-0 top-[50%] cursor-pointer bg-gray-50 text-blue-400 rounded-full h-8 w-8 z-10" 
+            onClick={() => ScrollRightHandler('user', 'left')} 
+          />
         </div>
       </div>
     </section>
