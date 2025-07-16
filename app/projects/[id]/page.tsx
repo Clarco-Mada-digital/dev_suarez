@@ -4,14 +4,20 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { notFound } from 'next/navigation';
-import { auth } from '@clerk/nextjs/server';
-import { ProjectBidForm } from '@/components/projects/ProjectBidForm';
+import { redirect } from 'next/navigation';
+import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { HeroSection } from '@/components/HeroSection';
 import Image from 'next/image';
+import { ProjectBidForm } from '@/components/projects/ProjectBidForm';
 
 export default async function ProjectPage({ params }: { params: { id: string } }) {
-  const { userId } = auth();
+  const session = await auth.getSession();
+
+  if (!session?.id) {
+    redirect('/sign-in');
+  }
+
   const project = await prisma.project.findUnique({
     where: { id: params.id },
     include: {
@@ -27,7 +33,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
       skills: true,
       bids: {
         where: {
-          freelancerId: userId || '',
+          freelancerId: session.id || '',
         },
       },
     },
@@ -38,7 +44,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
   }
 
   const hasBid = project.bids.length > 0;
-  const isClient = userId === project.clientId;
+  const isClient = session.id === project.clientId;
 
   return (
     <div className="flex flex-col">

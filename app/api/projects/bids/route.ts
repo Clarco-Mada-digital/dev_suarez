@@ -1,63 +1,87 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
   try {
-    const { userId } = auth();
+    const session = await auth.getSession();
     
-    if (!userId) {
-      return new NextResponse('Non autorisé', { status: 401 });
+    if (!session?.id) {
+      return new NextResponse(JSON.stringify({ error: 'Non autorisé' }), { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const data = await req.json();
-    const { projectId, amount, proposal } = data;
+    
+    // Validation des données
+    const { projectId, amount, message } = data;
+    
+    if (!projectId || !amount || !message) {
+      return new NextResponse(
+        JSON.stringify({ error: 'Tous les champs sont requis' }), 
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
-    // Vérifier que le projet existe et est toujours ouvert
+    // Vérifier que le projet existe
     const project = await prisma.project.findUnique({
       where: { id: projectId },
+      include: {
+        client: true,
+        bids: {
+          include: {
+            freelancer: true
+          }
+        }
+      }
     });
 
     if (!project) {
-      return new NextResponse('Projet non trouvé', { status: 404 });
+      return new NextResponse(
+        JSON.stringify({ error: 'Projet non trouvé' }), 
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
-    if (project.status !== 'OPEN') {
-      return new NextResponse('Ce projet n\'est plus ouvert aux candidatures', { status: 400 });
-    }
-
-    // Vérifier que l'utilisateur n'a pas déjà postulé
-    const existingBid = await prisma.projectBid.findFirst({
-      where: {
-        projectId,
-        freelancerId: userId,
-      },
-    });
-
+    // Vérifier que l'utilisateur n'a pas déjà fait une offre sur ce projet
+    const existingBid = project.bids.find(bid => bid.freelancerId === session.id);
     if (existingBid) {
-      return new NextResponse('Vous avez déjà postulé à ce projet', { status: 400 });
+      return new NextResponse(
+        JSON.stringify({ error: 'Vous avez déjà fait une offre sur ce projet' }), 
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
     // Créer l'offre
-    const bid = await prisma.projectBid.create({
+    const bid = await prisma.bid.create({
       data: {
-        amount: parseFloat(amount),
-        proposal,
-        status: 'PENDING',
-        projectId,
-        freelancerId: userId,
+        amount,
+        message,
+        freelancer: {
+          connect: { id: session.id }
+        },
+        project: {
+          connect: { id: projectId }
+        }
       },
+      include: {
+        freelancer: true,
+        project: true
+      }
     });
 
-    return NextResponse.json({ bidId: bid.id });
+    return NextResponse.json(bid);
   } catch (error) {
-    console.error('Error creating bid:', error);
+    console.error('Erreur lors de la création de l\'offre:', error);
     return new NextResponse('Erreur interne du serveur', { status: 500 });
   }
 }
 
 export async function GET(req: Request) {
   try {
+    const session = await auth.getSession();
     const { userId } = auth();
     
     if (!userId) {

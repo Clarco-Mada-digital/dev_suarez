@@ -1,37 +1,44 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(
-  req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await auth.getSession();
+    
+    if (!session?.id) {
+      return NextResponse.json(
+        { error: 'Non autorisé' },
+        { status: 401 }
+      );
+    }
+
     const project = await prisma.project.findUnique({
       where: { id: params.id },
       include: {
-        category: true,
-        client: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
+        client: true,
+        bids: {
+          include: {
+            freelancer: true
+          }
         },
         skills: true,
-      },
+        category: true
+      }
     });
 
     if (!project) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Projet non trouvé' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      return NextResponse.json(
+        { error: 'Projet non trouvé' },
+        { status: 404 }
       );
     }
 
     return NextResponse.json(project);
   } catch (error) {
-    console.error('Error fetching project:', error);
+    console.error('Erreur lors de la récupération du projet:', error);
     return new NextResponse(
       JSON.stringify({ error: 'Erreur serveur lors de la récupération du projet' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }

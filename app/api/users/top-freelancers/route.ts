@@ -1,84 +1,105 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// Types pour les offres (bids)
+interface Bid {
+  amount: number | null;
+  status: string;
+  project?: {
+    title: string;
+    skills: Array<{ name: string }>;
+  };
+}
+
+// Type pour le freelance formaté
+interface FormattedFreelancer {
+  id: string;
+  name: string;
+  email: string;
+  image: string;
+  role: string;
+  hourlyRate: number;
+  skills: string[];
+  completedProjects: number;
+  rating: number;
+}
+
 export async function GET() {
+  console.log('Début de la récupération des freelancers');
+  
   try {
+    // Récupérer les freelancers depuis la base de données
     const freelancers = await prisma.user.findMany({
       where: {
-        role: { in: ['FREELANCER', 'USER'] }, // Inclure les utilisateurs avec rôle FREELANCER ou USER
+        role: 'FREELANCER',
       },
-      take: 10, // Limite le nombre de résultats
-      orderBy: {
-        createdAt: 'desc', // Trie par date de création la plus récente
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        role: true,
+      include: {
         bidsAsFreelancer: {
-          select: {
-            amount: true,
-            status: true,
+          where: {
+            status: 'ACCEPTED',
+          },
+          include: {
             project: {
               select: {
-                title: true,
+                category: {
+                  select: {
+                    name: true,
+                  },
+                },
                 skills: {
                   select: {
-                    name: true
-                  }
-                }
-              }
-            }
-          }
-        }
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
-    // Transformer les données pour correspondre à l'interface attendue
-    const formattedFreelancers = freelancers.map(user => {
-      // Extraire les compétences uniques des projets sur lesquels l'utilisateur a postulé
-      const skills = Array.from(
-        new Set(
-          user.bidsAsFreelancer.flatMap(bid => 
-            bid.project.skills.map(skill => skill.name)
-          )
-        )
-      );
-      
-      // Calculer le taux horaire moyen basé sur les offres
-      const bidsWithAmount = user.bidsAsFreelancer.filter(bid => bid.amount > 0);
-      const hourlyRate = bidsWithAmount.length > 0
-        ? bidsWithAmount.reduce((sum, bid) => sum + bid.amount, 0) / bidsWithAmount.length
-        : 0;
-      
-      // Calculer une note basée sur les offres acceptées
-      const acceptedBids = user.bidsAsFreelancer.filter(bid => bid.status === 'ACCEPTED').length;
-      const rating = Math.min(5, 3 + (acceptedBids * 0.2)); // Note de base 3 + 0.2 par projet accepté
-      
+    // Transformer les données
+    const formattedFreelancers = freelancers.map((user) => {
+      // Calculer le taux horaire moyen
+      const totalAmount = user.bidsAsFreelancer.reduce((acc, bid) => acc + (bid.amount || 0), 0);
+      const hourlyRate = totalAmount / user.bidsAsFreelancer.length || 0;
+
+      // Extraire les compétences uniques
+      const skills = Array.from(new Set(
+        user.bidsAsFreelancer
+          .flatMap(bid => bid.project?.skills || [])
+          .map(skill => skill.name)
+      ));
+
+      // Calculer le nombre de projets terminés
+      const completedProjects = user.bidsAsFreelancer.length;
+
+      // Calculer la note moyenne (simulée)
+      const rating = Math.min(5, (hourlyRate / 100) * 5);
+
       return {
         id: user.id,
-        name: user.name || 'Utilisateur sans nom',
-        email: user.email,
-        image: user.image || '/placeholder-user.png',
-        role: user.role,
-        jobTitle: 'Freelance', // Valeur par défaut
-        skills: skills,
-        availability: true, // Par défaut à true
-        rating: parseFloat(rating.toFixed(1)), // Arrondir à 1 décimal
-        hourlyRate: Math.round(hourlyRate),
-        location: 'Non spécifié', // Valeur par défaut
+        name: user.name || 'Freelancer',
+        email: user.email || '',
+        image: user.image || '',
+        role: user.role || 'FREELANCER',
+        hourlyRate,
+        skills,
+        completedProjects,
+        rating,
       };
     });
 
-    return NextResponse.json(formattedFreelancers);
+    // Trier les freelancers par nombre de projets terminés
+    const sortedFreelancers = formattedFreelancers.sort((a, b) => b.completedProjects - a.completedProjects);
+
+    return NextResponse.json(sortedFreelancers);
   } catch (error) {
-    console.error('Error fetching top freelancers:', error);
+    console.error('Erreur lors de la récupération des freelancers:', error);
     return new NextResponse(
       JSON.stringify({ 
-        error: 'Internal Server Error',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Erreur lors de la récupération des freelancers',
+        details: error instanceof Error ? error.message : 'Erreur inconnue'
       }), 
       { 
         status: 500, 

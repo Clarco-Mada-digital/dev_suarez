@@ -3,6 +3,7 @@
 import CardUser from "@/components/CardUser";
 import CategorieCard from "@/components/CategorieCard";
 import Presentation from "@/components/Presentation";
+import { auth } from '@/auth';
 import { Button } from "@/components/ui/button";
 import { ArrowLeftCircle, ArrowRightCircle, CupSodaIcon, GoalIcon, MedalIcon, NotebookPen, SendIcon, StarIcon, WorkflowIcon } from "lucide-react";
 import Image from "next/image";

@@ -1,8 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
-import { useEffect, useState } from 'react';
+import { redirect } from 'next/navigation';
+import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
+import { ProfileForm } from '@/components/user/ProfileForm';
 import { User, Briefcase, Mail, MapPin, Clock, Globe, Award, Code } from 'lucide-react';
 
 interface ProfileData {
@@ -26,56 +28,44 @@ interface ProfileData {
   }[];
 }
 
-export default function UserProfilePage({ params }: { params: { id: string } }) {
-  const { userId: currentUserId } = useAuth();
+export default async function UserProfilePage({ params }: { params: { id: string } }) {
+  const session = await auth.getSession();
+
+  if (!session?.id) {
+    redirect('/sign-in');
+  }
+
+  const profile = await prisma.userProfile.findUnique({
+    where: { userId: session.id },
+    include: {
+      user: true
+    }
+  });
+
   const router = useRouter();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   
   const isCurrentUser = currentUserId === params.id;
 
-  // Simuler le chargement des données
+  // Chargement des données depuis l'API
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        // Remplacez cette partie par un appel API réel
-        const mockProfile: ProfileData = {
-          id: params.id,
-          name: 'Jean Dupont',
-          email: 'jean.dupont@example.com',
-          role: 'Développeur Full Stack',
-          location: 'Paris, France',
-          bio: 'Développeur passionné avec plus de 5 ans d\'expérience dans le développement web et mobile. Toujours à la recherche de nouveaux défis techniques.',
-          skills: ['React', 'Node.js', 'TypeScript', 'Next.js', 'GraphQL', 'Docker'],
-          experience: [
-            {
-              company: 'TechCorp',
-              position: 'Développeur Senior',
-              duration: '2020 - Présent'
-            },
-            {
-              company: 'WebAgency',
-              position: 'Développeur Frontend',
-              duration: '2018 - 2020'
-            }
-          ],
-          projects: [
-            {
-              id: '1',
-              title: 'Plateforme E-commerce',
-              description: 'Développement d\'une plateforme e-commerce complète avec système de paiement et gestion des stocks.',
-              tags: ['React', 'Node.js', 'MongoDB']
-            },
-            {
-              id: '2',
-              title: 'Application Mobile',
-              description: 'Application mobile de suivi d\'activité physique avec synchronisation en temps réel.',
-              tags: ['React Native', 'Firebase']
-            }
-          ]
-        };
+        console.log('Tentative de chargement du profil pour l\'ID:', params.id);
+        const response = await fetch(`/api/profile/${params.id}`);
         
-        setProfile(mockProfile);
+        console.log('Réponse reçue, statut:', response.status);
+        
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error('Erreur de réponse:', errorData);
+          throw new Error(`Erreur lors du chargement du profil: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Données du profil reçues:', data);
+        setProfile(data);
       } catch (error) {
         console.error('Erreur lors du chargement du profil:', error);
       } finally {

@@ -1,31 +1,29 @@
+"use client"
+
 import Link from "next/link"
 import Nav from "./Nav"
-import { Button } from "./ui/button"
 import ThemeToggle from "./theme/ThemeToggle"
-import MobileNav from "./MobileNav"
 import Logo from "./Logo"
+import HamburgerMenu from "./HamburgerMenu"
 
 const Header = () => {
   return (
-    <header className="py-4 xl:py-4 fixed top-0 left-0 w-full shadow-md backdrop-blur-md z-50">
-      <div className="container mx-auto flex justify-between items-center">
-        {/* Logo */}
-        <Logo />
-
-        {/* Desktop nav and hire me button */}
-        <div className="hidden xl:flex items-center gap-8">
-          <Nav />
-          <Link href="/contact">
-            <Button variant="gradient">Contactez-nous</Button>
-          </Link>
-          <ThemeToggle />
+    <header className="fixed top-0 left-0 w-full bg-transparent backdrop-blur-md z-50 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            <Logo />
+          </div>
+          <div className="flex items-center space-x-4">
+            <ThemeToggle />
+            <div className="hidden sm:block">
+              <Nav />
+            </div>
+            <div className="sm:hidden">
+              <HamburgerMenu />
+            </div>
+          </div>
         </div>
-
-        {/* Mobile nav */}
-        <div className="xl:hidden">
-          <MobileNav />
-        </div>
-
       </div>
     </header>
   )

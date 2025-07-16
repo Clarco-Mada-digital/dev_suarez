@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
   console.log('Requête POST reçue sur /api/projects');
   try {
-    const { userId } = auth();
+    const session = await auth.getSession();
     
-    if (!userId) {
-      console.log('Accès non autorisé: userId manquant');
+    if (!session?.id) {
+      console.log('Accès non autorisé: utilisateur non connecté');
       return new NextResponse(JSON.stringify({ error: 'Non autorisé' }), { 
         status: 401,
         headers: { 'Content-Type': 'application/json' }
@@ -30,14 +30,14 @@ export async function POST(req: Request) {
     }
 
     // Vérifier que l'utilisateur existe, sinon le créer
-    console.log('Vérification de l\'utilisateur avec ID:', userId);
+    console.log('Vérification de l\'utilisateur avec ID:', session.id);
     const user = await prisma.user.upsert({
-      where: { id: userId },
+      where: { id: session.id },
       update: {},
       create: {
-        id: userId,
-        name: 'Utilisateur', // Valeur par défaut, à mettre à jour avec les informations de Clerk
-        email: 'utilisateur@example.com' // Valeur par défaut, à mettre à jour avec les informations de Clerk
+        id: session.id,
+        name: session.name || 'Utilisateur',
+        email: session.email || 'utilisateur@example.com'
       },
     });
 

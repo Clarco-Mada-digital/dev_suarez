@@ -1,22 +1,23 @@
-import { UserButton } from '@clerk/nextjs'
-import { shadesOfPurple } from '@clerk/themes'
-import { SettingsIcon } from 'lucide-react'
-import React from 'react'
+'use client';
 
-const MyUserButton = () => {
+import { LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { auth } from '@/auth';
+
+export default function MyUserButton() {
+  const router = useRouter();
+  const email = typeof window !== 'undefined' ? localStorage.getItem('email') : null;
+
   return (
-    <div>
-      <UserButton appearance={{ baseTheme: shadesOfPurple }} >
-        <UserButton.UserProfilePage
-          label="Site paramètres"
-          url="custom"
-          labelIcon={<SettingsIcon width={16} height={16} />}
-        >
-        Mes paramètres
-        </UserButton.UserProfilePage>
-      </UserButton>
-    </div>
-  )
+    <Button
+      variant="outline"
+      onClick={() => {
+        auth.removeEmail();
+        router.push('/sign-in');
+      }}
+      className="text-sm"
+    >
+      Déconnexion
+    </Button>
+  );
 }
-
-export default MyUserButton

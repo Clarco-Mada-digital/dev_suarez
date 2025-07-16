@@ -90,6 +90,8 @@ async function main() {
         email: 'client1@example.com',
         emailVerified: new Date(),
         image: 'https://randomuser.me/api/portraits/men/1.jpg',
+        passwordHash: await hash('client123', 10),
+        passwordSalt: 'salt123',
       },
     });
 
@@ -98,6 +100,8 @@ async function main() {
         name: 'Développeur Full Stack',
         email: 'dev@example.com',
         emailVerified: new Date(),
+        passwordHash: await hash('dev123', 10),
+        passwordSalt: 'salt123',
         image: 'https://randomuser.me/api/portraits/men/3.jpg',
       },
     });

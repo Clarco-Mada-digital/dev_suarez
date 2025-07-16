@@ -8,8 +8,8 @@ export async function GET(
 ) {
   try {
     // Vérifier que l'utilisateur est authentifié
-    const session = await auth();
-    if (!session?.userId) {
+    const { user } = auth();
+    if (!user?.id) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
@@ -102,13 +102,13 @@ export async function PATCH(
 ) {
   try {
     // Vérifier que l'utilisateur est authentifié
-    const session = await auth();
-    if (!session?.userId) {
+    const { user } = auth();
+    if (!user?.id) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
     // Vérifier que l'utilisateur met à jour son propre profil ou est un administrateur
-    if (session.userId !== params.id && session.role !== 'ADMIN') {
+    if (user.id !== params.id && user.role !== 'ADMIN') {
       return new NextResponse('Forbidden', { status: 403 });
     }
 

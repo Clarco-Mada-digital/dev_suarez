@@ -20,17 +20,11 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'randomuser.me',
         port: '',
-        pathname: '/**',
+        pathname: '/api/**',
       },
       {
         protocol: 'https',
-        hostname: 'img.clerk.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.clerk.dev',
+        hostname: 'randomuser.me',
         port: '',
         pathname: '/**',
       },
@@ -51,12 +45,6 @@ const nextConfig = {
     config.resolve.alias['@/lib'] = path.resolve(__dirname, 'lib');
     
     return config;
-  },
-  // Configuration pour Clerk
-  clerk: {
-    // Désactive la page de connexion intégrée pour utiliser notre propre page
-    signInUrl: '/sign-in',
-    signUpUrl: '/sign-up',
   },
   experimental: {
     swcMinify: true,

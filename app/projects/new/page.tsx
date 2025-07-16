@@ -1,20 +1,13 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/components/ui/use-toast';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useEffect, useState } from 'react';
+import { redirect } from 'next/navigation';
+import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
+import { ProjectForm } from '@/components/projects/ProjectForm';
 
-const projectFormSchema = z.object({
-  title: z.string().min(5, 'Le titre doit contenir au moins 5 caractères'),
+export default async function NewProjectPage() {
+  const session = await auth.getSession();
   description: z.string().min(50, 'La description doit contenir au moins 50 caractères'),
   budget: z.number().min(1, 'Le budget est requis').positive('Le budget doit être positif'),
   deadline: z.string().min(1, 'La date limite est requise'),
