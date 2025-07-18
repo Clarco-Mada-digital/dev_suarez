@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
+import { useUser } from '@/hooks/use-user';
 
 const bidFormSchema = z.object({
   amount: z.number().min(1, 'Le montant est requis').positive('Le montant doit être positif'),
@@ -20,11 +21,12 @@ type BidFormValues = z.infer<typeof bidFormSchema>;
 
 interface ProjectBidFormProps {
   projectId: string;
+  hasBid: boolean;
 }
 
-export function ProjectBidForm({ projectId }: ProjectBidFormProps) {
+export function ProjectBidForm({ projectId, hasBid }: ProjectBidFormProps) {
   const router = useRouter();
-  const { toast } = useToast();
+  const { user, loading: userLoading, isAuthenticated } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<BidFormValues>({
@@ -52,26 +54,47 @@ export function ProjectBidForm({ projectId }: ProjectBidFormProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Une erreur est survenue lors de la soumission de votre offre');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Une erreur est survenue lors de la soumission de votre offre');
       }
 
-      toast({
-        title: 'Offre soumise avec succès',
+      toast.success('Offre soumise avec succès', {
         description: 'Votre offre a été envoyée au client.',
       });
 
-      // Refresh the page to show the updated UI
-      router.refresh();
+      router.refresh(); // Rafraîchir la page pour montrer l'état mis à jour
     } catch (error) {
       console.error('Error submitting bid:', error);
-      toast({
-        title: 'Erreur',
+      toast.error('Erreur', {
         description: error instanceof Error ? error.message : 'Une erreur est survenue',
-        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (userLoading) {
+    return <p>Chargement du profil...</p>;
+  }
+
+  if (!isAuthenticated || user?.role !== 'FREELANCER') {
+    return (
+      <div className="text-center text-muted-foreground">
+        <p>Seuls les freelances peuvent postuler à ce projet.</p>
+        {!isAuthenticated && <p>Veuillez vous connecter pour continuer.</p>}
+      </div>
+    );
+  }
+
+  if (hasBid) {
+    return (
+      <div className="text-center py-4">
+        <p className="text-green-600 font-medium mb-2">Vous avez déjà postulé à ce projet</p>
+        <Button variant="outline" className="w-full" disabled>
+          Candidature envoyée
+        </Button>
+      </div>
+    );
   }
 
   return (

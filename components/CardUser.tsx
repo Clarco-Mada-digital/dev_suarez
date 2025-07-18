@@ -19,9 +19,9 @@ const CardUser: React.FC<CardUserProps> = ({
   const completedProjects = 10; // À remplacer par des données dynamiques
 
   return (
-    <div className="group relative w-64 bg-card rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+    <div className="group relative w-80 bg-card rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
       {/* En-tête avec image de profil et statut */}
-      <div className="relative w-full h-48 overflow-hidden">
+      <div className="relative w-80 h-64 overflow-hidden">
         {avatarUrl ? (
           <>
             <Image 
@@ -43,7 +43,7 @@ const CardUser: React.FC<CardUserProps> = ({
             <div className="absolute inset-0 border border-gray-200 rounded-t-xl pointer-events-none"></div>
           </>
         ) : (
-          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+          <div className="w-80 h-48 bg-gray-200 flex items-center justify-center">
             <span className="text-gray-500 text-4xl font-bold">
               {name.split(' ').map(n => n[0]).join('')}
             </span>
@@ -59,7 +59,7 @@ const CardUser: React.FC<CardUserProps> = ({
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
           <Link href={`/profile/${id}`} className="hover:underline">
-            <h3 className="text-lg font-semibold text-foreground">{name}</h3>
+            <h3 className="text-lg font-semibold text-foreground ellipsis">{name}</h3>
             <p className="text-sm text-muted-foreground">{jobTitle}</p>
           </Link>
           

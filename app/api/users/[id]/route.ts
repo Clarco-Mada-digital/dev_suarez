@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(
-  req: Request,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     // Vérifier que l'utilisateur est authentifié
-    const { userId } = auth();
-    if (!userId) {
-      return new NextResponse('Non autorisé', { status: 401 });
+    const { user } = auth();
+    if (!user?.id) {
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     // Récupérer l'utilisateur avec ses projets et offres
@@ -21,7 +21,9 @@ export async function GET(
         name: true,
         email: true,
         image: true,
+        role: true,
         createdAt: true,
+        updatedAt: true,
         projectsAsClient: {
           select: {
             id: true,
@@ -90,6 +92,58 @@ export async function GET(
     return NextResponse.json(user);
   } catch (error) {
     console.error('Error fetching user profile:', error);
-    return new NextResponse('Erreur serveur', { status: 500 });
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // Vérifier que l'utilisateur est authentifié
+    const { user } = auth();
+    if (!user?.id) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    // Vérifier que l'utilisateur met à jour son propre profil ou est un administrateur
+    if (user.id !== params.id && user.role !== 'ADMIN') {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
+
+    const data = await request.json();
+
+    // Mettre à jour l'utilisateur
+    const updatedUser = await prisma.user.update({
+      where: { id: params.id },
+      data: {
+        name: data.name,
+        image: data.image,
+        // Ne pas permettre la mise à jour du rôle sauf pour les administrateurs
+        ...(session.role === 'ADMIN' && { role: data.role }),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+        projectsAsClient: {
+          select: {
+            id: true,
+            title: true,
+          },
+          take: 5,
+        },
+      },
+    });
+
+    return NextResponse.json(updatedUser);
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

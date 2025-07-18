@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -18,14 +20,15 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'randomuser.me',
         port: '',
+        pathname: '/api/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'randomuser.me',
+        port: '',
         pathname: '/**',
       },
     ],
-  },
-  // Configuration expérimentale
-  experimental: {
-    swcMinify: true,
-    swcTraceProfiling: true
   },
   // Configuration des chemins d'importation
   webpack: (config, { isServer }) => {
@@ -36,14 +39,38 @@ const nextConfig = {
         fs: false,
       };
     }
+    // Ajoutez des alias pour les chemins d'importation
+    config.resolve.alias['@'] = path.resolve(__dirname);
+    config.resolve.alias['@/components'] = path.resolve(__dirname, 'components');
+    config.resolve.alias['@/lib'] = path.resolve(__dirname, 'lib');
+    
     return config;
   },
-  // Configuration pour Clerk
-  clerk: {
-    // Désactive la page de connexion intégrée pour utiliser notre propre page
-    signInUrl: '/sign-in',
-    signUpUrl: '/sign-up',
+  experimental: {
+    swcMinify: true,
+    swcTraceProfiling: true
+  },
+  // Configuration des redirections
+  async redirects() {
+    return [
+      {
+        source: '/sign-in',
+        has: [
+          {
+            type: 'query',
+            key: 'redirect_url',
+          },
+        ],
+        destination: '/sign-in?redirect_url=:redirect_url',
+        permanent: false,
+      },
+    ];
   },
 };
+
+// Configuration pour l'environnement de développement
+if (process.env.NODE_ENV !== 'production') {
+  nextConfig.images.domains = ['localhost'];
+}
 
 module.exports = nextConfig;

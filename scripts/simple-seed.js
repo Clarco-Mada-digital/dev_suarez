@@ -90,6 +90,8 @@ async function main() {
         email: 'client1@example.com',
         emailVerified: new Date(),
         image: 'https://randomuser.me/api/portraits/men/1.jpg',
+        passwordHash: await hash('client123', 10),
+        role: 'CLIENT',
       },
     });
 
@@ -98,7 +100,33 @@ async function main() {
         name: 'Développeur Full Stack',
         email: 'dev@example.com',
         emailVerified: new Date(),
+        passwordHash: await hash('dev123', 10),
         image: 'https://randomuser.me/api/portraits/men/3.jpg',
+        role: 'FREELANCER',
+        profile: {
+          create: {
+            jobTitle: 'Développeur Full Stack',
+            bio: 'Expert en développement web avec une passion pour les technologies modernes.',
+            location: 'Antananarivo, Madagascar',
+            website: 'https://dev.example.com',
+            skills: 'React, Next.js, Node.js, Prisma, Tailwind CSS',
+            languages: 'Français, Anglais',
+            awards: "Meilleur Développeur 2023, Prix de l'Innovation",
+            availability: true,
+            hourlyRate: 50,
+            rating: 4.8,
+          },
+        },
+      },
+    });
+
+    const adminUser = await prisma.user.create({
+      data: {
+        name: 'Admin User',
+        email: 'admin@example.com',
+        emailVerified: new Date(),
+        passwordHash: await hash('admin123', 10),
+        role: 'ADMIN',
       },
     });
 
