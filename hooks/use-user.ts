@@ -12,6 +12,8 @@ interface UserProfileData {
   company?: string;
   phoneNumber?: string;
   skills?: string;
+  languages?: string;
+  awards?: string;
   availability: boolean;
   rating?: number;
   hourlyRate?: number;
@@ -52,14 +54,15 @@ export function useUser(): UseUserResult {
           if (!response.ok) {
             throw new Error('Failed to fetch user profile');
           }
-          const profileData = await response.json();
+          const apiData = await response.json();
+          // apiData shape comes from /api/profile/[id]/route.ts and includes { id, name, email, image, role, profile, ... }
           setUser({
             id: session.user.id,
-            name: session.user.name,
-            email: session.user.email,
-            image: session.user.image,
-            role: session.user.role,
-            profile: profileData,
+            name: apiData?.name ?? session.user.name,
+            email: apiData?.email ?? session.user.email,
+            image: apiData?.image ?? session.user.image,
+            role: apiData?.role ?? session.user.role,
+            profile: apiData?.profile ?? undefined,
           });
           setError(null);
         } catch (err) {

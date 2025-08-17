@@ -6,45 +6,29 @@ export const getAuth = () => {
 };
 
 export async function getCurrentUser() {
-  const { userId } = auth();
-  
-  if (!userId) {
-    return null;
-  }
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  if (!userId) return null;
 
   try {
-    // Récupérer l'utilisateur depuis Clerk
-    const clerkUser = await currentUser();
-    
-    if (!clerkUser) {
-      return null;
-    }
-
-    // Récupérer ou créer l'utilisateur dans la base de données
-    const user = await prisma.user.upsert({
-      where: { clerkId: userId },
-      update: {
-        email: clerkUser.emailAddresses[0]?.emailAddress,
-        name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || null,
-        image: clerkUser.imageUrl,
-        lastSignInAt: new Date(),
-      },
-      create: {
-        clerkId: userId,
-        email: clerkUser.emailAddresses[0]?.emailAddress,
-        name: `${clerkUser.firstName || ''} ${clockerUser.lastName || ''}`.trim() || null,
-        image: clerkUser.imageUrl,
-        emailVerified: new Date(),
-        lastSignInAt: new Date(),
-      },
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { profile: true },
     });
 
-    return {
-      ...user,
-      // Ajoutez des propriétés supplémentaires de Clerk si nécessaire
-      fullName: user.name,
-      initials: user.name?.split(' ').map(n => n[0]).join('').toUpperCase(),
-    };
+    if (!user) return null;
+
+    const fullName = user.name ?? null;
+    const initials = fullName
+      ? fullName
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+          .toUpperCase()
+      : undefined;
+
+    return { ...user, fullName, initials } as const;
   } catch (error) {
     console.error('Error getting current user:', error);
     return null;

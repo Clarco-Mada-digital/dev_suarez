@@ -1,20 +1,21 @@
 "use client"
 
 import { Menu } from 'lucide-react'
-import { usePathname } from 'next/navigation'
 import { Button } from './ui/button'
-import { Link } from 'next/link'
-import { auth } from '@/auth'
+import Link from 'next/link'
+import { useSession, signOut } from 'next-auth/react'
 
 export default function MobileNav() {
-  const pathName = usePathname()
-  const email = typeof window !== 'undefined' ? localStorage.getItem('email') : null
+  const { status } = useSession()
 
   return (
     <div className="flex items-center gap-3">
       {/* When not authenticated */}
-      {!email ? (
+      {status !== 'authenticated' ? (
         <>
+          <Link href="/assistant" className="capitalize font-medium hover:text-blue-500 transition-all">
+            Assistant
+          </Link>
           <Link href="/sign-in" className="capitalize font-medium hover:text-blue-500 transition-all">
             se connecter
           </Link>
@@ -24,12 +25,12 @@ export default function MobileNav() {
         </>
       ) : (
         <>
+          <Link href="/assistant" className="capitalize font-medium hover:text-blue-500 transition-all">
+            Assistant
+          </Link>
           <Button
             variant="outline"
-            onClick={() => {
-              auth.removeEmail()
-              window.location.href = '/sign-in'
-            }}
+            onClick={() => signOut({ callbackUrl: '/sign-in' })}
             className="text-sm"
           >
             Déconnexion

@@ -7,8 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Save } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { auth } from '@/auth';
+import { useSession } from 'next-auth/react';
 
 export interface UserProfileData {
   id?: string;
@@ -24,9 +23,9 @@ export interface UserProfileData {
 }
 
 export function ProfileForm() {
-  const email = typeof window !== 'undefined' ? localStorage.getItem('email') : null;
+  const { data: session, status } = useSession();
+  const currentUserId = session?.user?.id as string | undefined;
   const { toast } = useToast();
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<UserProfileData>({
     firstName: '',
@@ -42,11 +41,11 @@ export function ProfileForm() {
   
   // Fonction pour charger les données du profil
   const loadProfile = async () => {
-    if (!email) return;
+    if (!currentUserId) return;
     
     try {
       setIsLoading(true);
-      const response = await fetch('/api/profile');
+      const response = await fetch(`/api/profile/${currentUserId}`);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -54,26 +53,26 @@ export function ProfileForm() {
         throw new Error(errorData.error || 'Erreur lors du chargement du profil');
       }
       
-      const profile = await response.json();
-      
-      if (profile) {
+      const data = await response.json();
+
+      if (data) {
         // Extraire le prénom et le nom du nom complet
-        const nameParts = profile.name?.split(' ') || [];
+        const nameParts = data.name?.split(' ') || [];
         const firstName = nameParts[0] || '';
         const lastName = nameParts.slice(1).join(' ') || '';
         
-        setFormData({
-          ...profile,
+        setFormData(prev => ({
+          ...prev,
           firstName,
           lastName,
-          email: profile.email || '',
-          phoneNumber: profile.phoneNumber || '',
-          bio: profile.bio || '',
-          location: profile.location || '',
-          website: profile.website || '',
-          jobTitle: profile.jobTitle || '',
-          company: profile.company || ''
-        });
+          email: data.email || '',
+          phoneNumber: data.profile?.phoneNumber || '',
+          bio: data.profile?.bio || '',
+          location: data.profile?.location || '',
+          website: data.profile?.website || '',
+          jobTitle: data.profile?.jobTitle || '',
+          company: data.profile?.company || ''
+        }));
       }
     } catch (error) {
       console.error('Erreur lors du chargement du profil:', error);
@@ -89,10 +88,11 @@ export function ProfileForm() {
 
   // Charger les données du profil
   useEffect(() => {
-    if (user) {
+    if (status === 'authenticated' && currentUserId) {
       loadProfile();
     }
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, currentUserId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -104,7 +104,7 @@ export function ProfileForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
+    if (status !== 'authenticated' || !currentUserId) {
       toast({
         title: 'Erreur',
         description: 'Aucun utilisateur connecté',
@@ -117,8 +117,8 @@ export function ProfileForm() {
     
     try {
       // Mettre à jour le profil via l'API
-      const response = await fetch('/api/profile', {
-        method: 'PUT',
+      const response = await fetch(`/api/profile/${currentUserId}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -164,8 +164,16 @@ export function ProfileForm() {
     }
   };
 
-  if (!isLoaded) {
+  if (status === 'loading') {
     return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  if (status === 'unauthenticated') {
+    return (
+      <div className="flex justify-center p-8 text-sm text-muted-foreground">
+        Veuillez vous connecter pour modifier votre profil.
+      </div>
+    );
   }
 
   return (

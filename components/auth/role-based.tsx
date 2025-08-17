@@ -1,8 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
-import { auth } from '@/auth';
+import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
 
 type RoleBasedProps = {
@@ -16,11 +15,11 @@ export function RoleBased({
   allowedRoles = ['ADMIN'],
   fallback = null 
 }: RoleBasedProps) {
-  const { userId, sessionClaims } = auth();
-  const userRole = sessionClaims?.metadata?.role as string || 'USER';
-  const hasAccess = allowedRoles.includes(userRole);
+  const { status, data } = useSession();
+  const userRole = (data?.user as any)?.role as string | undefined;
+  const hasAccess = userRole ? allowedRoles.includes(userRole) : false;
 
-  if (!userId) {
+  if (status === 'loading') {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin" />
@@ -28,7 +27,7 @@ export function RoleBased({
     );
   }
 
-  if (!hasAccess) {
+  if (status === 'unauthenticated' || !hasAccess) {
     return <>{fallback}</> || (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
         <h2 className="text-2xl font-bold mb-4">Accès refusé</h2>

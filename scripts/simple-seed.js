@@ -14,6 +14,9 @@ async function main() {
     await prisma.projectSkill.deleteMany();
     await prisma.project.deleteMany();
     await prisma.projectCategory.deleteMany();
+    await prisma.account.deleteMany();
+    await prisma.session.deleteMany();
+    await prisma.userProfile.deleteMany();
     await prisma.user.deleteMany();
 
     console.log('📝 Creating categories...');
@@ -95,6 +98,17 @@ async function main() {
       },
     });
 
+    const client2 = await prisma.user.create({
+      data: {
+        name: 'Client Entreprise',
+        email: 'client2@example.com',
+        emailVerified: new Date(),
+        image: 'https://randomuser.me/api/portraits/men/2.jpg',
+        passwordHash: await hash('client123', 10),
+        role: 'CLIENT',
+      },
+    });
+
     const freelancer1 = await prisma.user.create({
       data: {
         name: 'Développeur Full Stack',
@@ -111,10 +125,58 @@ async function main() {
             website: 'https://dev.example.com',
             skills: 'React, Next.js, Node.js, Prisma, Tailwind CSS',
             languages: 'Français, Anglais',
-            awards: "Meilleur Développeur 2023, Prix de l'Innovation",
+            awards: "Meilleur Développeur 2023, Prix de l\'Innovation",
             availability: true,
             hourlyRate: 50,
             rating: 4.8,
+          },
+        },
+      },
+    });
+
+    const freelancer2 = await prisma.user.create({
+      data: {
+        name: 'Graphiste & Designer UI/UX',
+        email: 'designer@example.com',
+        emailVerified: new Date(),
+        passwordHash: await hash('designer123', 10),
+        image: 'https://randomuser.me/api/portraits/women/2.jpg',
+        role: 'FREELANCER',
+        profile: {
+          create: {
+            jobTitle: 'Graphiste & Designer UI/UX',
+            bio: 'Créative et passionnée par le design, je transforme vos idées en visuels percutants.',
+            location: 'Paris, France',
+            website: 'https://designer.example.com',
+            skills: 'Figma, Adobe XD, Photoshop, Illustrator, UI/UX Design',
+            languages: 'Français, Anglais',
+            availability: true,
+            hourlyRate: 45,
+            rating: 4.9,
+          },
+        },
+      },
+    });
+
+    const freelancer3 = await prisma.user.create({
+      data: {
+        name: 'Spécialiste SEO & Marketing',
+        email: 'seo@example.com',
+        emailVerified: new Date(),
+        passwordHash: await hash('seo123', 10),
+        image: 'https://randomuser.me/api/portraits/men/4.jpg',
+        role: 'FREELANCER',
+        profile: {
+          create: {
+            jobTitle: 'Spécialiste SEO & Marketing Digital',
+            bio: 'J\'aide les entreprises à améliorer leur visibilité en ligne et à attirer plus de clients.',
+            location: 'Lyon, France',
+            website: 'https://seo.example.com',
+            skills: 'SEO, Google Analytics, SEM, Marketing de contenu, Réseaux sociaux',
+            languages: 'Français',
+            availability: false,
+            hourlyRate: 60,
+            rating: 4.7,
           },
         },
       },

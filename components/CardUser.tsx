@@ -12,16 +12,18 @@ const CardUser: React.FC<CardUserProps> = ({
   avatarUrl,
   availability,
   rating = 0,
+  ratingCount,
   hourlyRate,
   location,
+  completedProjects,
 }) => {
   const truncatedBio = "Développeur passionné avec de l'expérience dans les technologies modernes...";
-  const completedProjects = 10; // À remplacer par des données dynamiques
+  const completedProjectsCount = completedProjects ?? 0;
 
   return (
-    <div className="group relative w-80 bg-card rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+    <div className="group relative w-full bg-card rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col">
       {/* En-tête avec image de profil et statut */}
-      <div className="relative w-80 h-64 overflow-hidden">
+      <div className="relative w-full h-64 overflow-hidden">
         {avatarUrl ? (
           <>
             <Image 
@@ -56,7 +58,7 @@ const CardUser: React.FC<CardUserProps> = ({
       </div>
 
       {/* Corps de la carte */}
-      <div className="p-4">
+      <div className="p-4 flex flex-col flex-grow">
         <div className="flex justify-between items-start mb-2">
           <Link href={`/profile/${id}`} className="hover:underline">
             <h3 className="text-lg font-semibold text-foreground ellipsis">{name}</h3>
@@ -66,7 +68,9 @@ const CardUser: React.FC<CardUserProps> = ({
           {rating > 0 && (
             <div className="flex items-center bg-primary/10 px-2 py-1 rounded-full">
               <StarIcon className="w-4 h-4 text-yellow-500 fill-yellow-500 mr-1" />
-              <span className="text-sm font-medium">{rating.toFixed(1)}</span>
+              <span className="text-sm font-medium">
+                {rating.toFixed(1)}
+              </span>
             </div>
           )}
         </div>
@@ -114,7 +118,7 @@ const CardUser: React.FC<CardUserProps> = ({
         <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
           <div className="flex items-center text-sm">
             <MedalIcon className="w-4 h-4 text-purple-500 mr-1" />
-            <span className="text-muted-foreground">{completedProjects} projets</span>
+            <span className="text-muted-foreground">{completedProjectsCount} projets</span>
           </div>
           <Link 
             href={`/profile/${id}`}

@@ -5,9 +5,9 @@ import { prisma } from '@/lib/prisma';
 export async function POST(req: Request) {
   console.log('Requête POST reçue sur /api/projects');
   try {
-    const session = await auth.getSession();
+    const session = await auth();
     
-    if (!session?.id) {
+    if (!session?.user?.id) {
       console.log('Accès non autorisé: utilisateur non connecté');
       return new NextResponse(JSON.stringify({ error: 'Non autorisé' }), { 
         status: 401,
@@ -15,6 +15,7 @@ export async function POST(req: Request) {
       });
     }
 
+    const userId = session.user.id;
     const data = await req.json();
     console.log('Données reçues:', data);
     
@@ -30,18 +31,29 @@ export async function POST(req: Request) {
     }
 
     // Vérifier que l'utilisateur existe, sinon le créer
-    console.log('Vérification de l\'utilisateur avec ID:', session.id);
+    console.log(`Vérification de l'utilisateur avec ID: ${userId}`);
     const user = await prisma.user.upsert({
-      where: { id: session.id },
+      where: { id: userId },
       update: {},
       create: {
-        id: session.id,
-        name: session.name || 'Utilisateur',
-        email: session.email || 'utilisateur@example.com'
+        id: userId,
+        name: session.user.name || 'Utilisateur',
+        email: session.user.email || 'utilisateur@example.com',
+        // Préserver le rôle actuel si disponible (ex: ADMIN), sinon CLIENT par défaut
+        role: (session.user.role as string) || 'CLIENT',
       },
     });
 
     console.log('Utilisateur vérifié/créé:', user);
+
+    // Vérifier que l'utilisateur a le rôle CLIENT ou ADMIN
+    if (user.role !== 'CLIENT' && user.role !== 'ADMIN') {
+      console.log('Accès non autorisé: rôle utilisateur incorrect', user.role);
+      return new NextResponse(JSON.stringify({ error: 'Non autorisé: rôle incorrect' }), {
+        status: 403, // Forbidden, as the user is authenticated but not authorized
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
     // Vérifier que la catégorie existe
     console.log('Recherche de la catégorie avec ID:', categoryId);
@@ -119,10 +131,13 @@ export async function POST(req: Request) {
       console.error('Erreur lors de la création du projet:', error);
       
       // Vérifier si c'est une erreur de clé étrangère
-      if (error.code === 'P2003') {
+      const code = typeof error === 'object' && error !== null && 'code' in error
+        ? (error as any).code
+        : undefined;
+      if (code === 'P2003') {
         const errorInfo = {
-          code: error.code,
-          meta: error.meta,
+          code,
+          meta: (error as any).meta,
           message: 'Erreur de contrainte de clé étrangère',
           details: 'Vérifiez que toutes les références existent (client, catégorie)'
         };
@@ -135,8 +150,6 @@ export async function POST(req: Request) {
       
       throw error; // Renvoie l'erreur pour qu'elle soit capturée par le bloc catch externe
     }
-
-    return NextResponse.json({ projectId: project.id });
   } catch (error) {
     console.error('Error creating project:', error);
     return new NextResponse('Erreur interne du serveur', { status: 500 });

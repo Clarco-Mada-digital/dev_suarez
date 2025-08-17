@@ -6,6 +6,7 @@ import ThemeProvider from "@/components/theme/ThemeProvider";
 import Footer from "@/components/Footer";
 import { comfortaa } from "@/lib/fonts";
 import Provider from "./Provider";
+import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: "D.S by MADA-Digital",
@@ -28,6 +29,7 @@ export default function RootLayout({
             {/* Footer */}
             <Footer />
           </ThemeProvider>
+          <Toaster />
         </Provider>
       </body>
     </html>

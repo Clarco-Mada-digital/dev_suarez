@@ -29,7 +29,10 @@ model User {
   sessions      Session[]
   projectsAsClient    Project[]      @relation("ClientProjects")
   bidsAsFreelancer    ProjectBid[]   @relation("FreelancerBids")
+  projectsAsFreelancer Project[]     @relation("AssignedProjects")
   profile             UserProfile?
+  quoteRequestsAsClient     QuoteRequest[] @relation("ClientQuoteRequests")
+  quoteRequestsAsFreelancer QuoteRequest[] @relation("FreelancerQuoteRequests")
   
   @@map("users")
 }
@@ -51,6 +54,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -59,6 +63,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -82,6 +88,8 @@ model UserProfile {
   awards       String? // Ex: "Meilleur Développeur 2023, Prix de l'Innovation"
   availability Boolean  @default(false)
   rating       Float?
+  ratingCount  Int      @default(0)
+  completedProjectsCount Int @default(0)
   hourlyRate   Float?   @map("hourly_rate")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
@@ -110,6 +118,13 @@ model Project {
   category    ProjectCategory @relation(fields: [categoryId], references: [id])
   bids        ProjectBid[]
   skills      ProjectSkill[]
+  assignedFreelancerId String?
+  assignedFreelancer   User?          @relation("AssignedProjects", fields: [assignedFreelancerId], references: [id])
+  freelancerRating     Int?
+
+  @@index([clientId])
+  @@index([categoryId])
+  @@index([assignedFreelancerId])
 }
 
 model ProjectCategory {
@@ -136,6 +151,9 @@ model ProjectBid {
   project     Project  @relation(fields: [projectId], references: [id])
   freelancerId String
   freelancer  User     @relation("FreelancerBids", fields: [freelancerId], references: [id])
+
+  @@index([projectId])
+  @@index([freelancerId])
 }
 
 model ProjectSkill {
@@ -147,6 +165,7 @@ model ProjectSkill {
   project   Project @relation(fields: [projectId], references: [id])
   
   @@unique([name, projectId])
+  @@index([projectId])
 }
 
 enum ProjectStatus {
@@ -161,4 +180,52 @@ enum BidStatus {
   ACCEPTED
   REJECTED
   WITHDRAWN
+}
+
+// Quote request between a client (requester) and a freelancer (recipient)
+model QuoteRequest {
+  id           String      @id @default(cuid())
+  clientId     String
+  freelancerId String
+  title        String
+  description  String
+  budgetMin    Float?
+  budgetMax    Float?
+  deadline     DateTime?
+  status       QuoteStatus @default(PENDING)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  // Counter proposal (from freelancer)
+  counterBudgetMin Float?
+  counterBudgetMax Float?
+  counterDeadline  DateTime?
+  counterMessage   String?
+
+  // Relations
+  client     User @relation("ClientQuoteRequests", fields: [clientId], references: [id])
+  freelancer User @relation("FreelancerQuoteRequests", fields: [freelancerId], references: [id])
+
+  @@index([clientId])
+  @@index([freelancerId])
+  @@map("quote_requests")
+}
+
+enum QuoteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  COUNTERED
+}
+
+// Global AI settings (singleton row) to control provider/model/temperature application-wide
+model AiSettings {
+  id          String   @id @default("global")
+  provider    String   @default("mock")
+  model       String?
+  temperature Float    @default(0.4)
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+
+  @@map("ai_settings")
 }

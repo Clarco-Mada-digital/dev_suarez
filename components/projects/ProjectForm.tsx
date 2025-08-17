@@ -51,8 +51,9 @@ export function ProjectForm({ categories }: ProjectFormProps) {
   });
 
   async function onSubmit(values: ProjectFormValues) {
-    if (!isAuthenticated || user?.role !== 'CLIENT') {
-      toast.error('Vous devez être connecté en tant que client pour publier un projet.');
+    const role = user?.role;
+    if (!isAuthenticated || (role !== 'CLIENT' && role !== 'ADMIN')) {
+      toast.error("Vous devez être connecté en tant que client ou administrateur pour publier un projet.");
       return;
     }
 
@@ -85,7 +86,8 @@ export function ProjectForm({ categories }: ProjectFormProps) {
         description: 'Votre projet a été publié et est maintenant visible par les freelances.',
       });
 
-      router.push(`/projects/${data.id}`);
+      const projectId = data.projectId || data.id; // API renvoie projectId
+      router.push(`/projects/${projectId}`);
     } catch (error) {
       console.error('Error creating project:', error);
       toast.error('Erreur', {
@@ -100,10 +102,10 @@ export function ProjectForm({ categories }: ProjectFormProps) {
     return <div className="container mx-auto px-4 py-8">Chargement du profil...</div>;
   }
 
-  if (!isAuthenticated || user?.role !== 'CLIENT') {
+  if (!isAuthenticated || (user?.role !== 'CLIENT' && user?.role !== 'ADMIN')) {
     return (
       <div className="container mx-auto px-4 py-8 text-center text-red-500">
-        <p>Vous devez être connecté en tant que client pour publier un projet.</p>
+        <p>Vous devez être connecté en tant que client ou administrateur pour publier un projet.</p>
       </div>
     );
   }

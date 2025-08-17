@@ -26,6 +26,13 @@ export default function HamburgerMenu() {
           >
             Projets
           </Link>
+
+          <Link
+            href="/assistant"
+            className="block px-4 py-2 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            Assistant
+          </Link>
           
           {status === "unauthenticated" ? (
             <>

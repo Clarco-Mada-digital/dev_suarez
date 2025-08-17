@@ -8,13 +8,13 @@ export async function GET(
 ) {
   try {
     // Vérifier que l'utilisateur est authentifié
-    const { user } = auth();
-    if (!user?.id) {
+    const session = await auth();
+    if (!session?.user?.id) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
     // Récupérer l'utilisateur avec ses projets et offres
-    const user = await prisma.user.findUnique({
+    const userData = await prisma.user.findUnique({
       where: { id: params.id },
       select: {
         id: true,
@@ -56,7 +56,7 @@ export async function GET(
           select: {
             id: true,
             amount: true,
-            message: true,
+            proposal: true,
             status: true,
             createdAt: true,
             project: {
@@ -85,11 +85,11 @@ export async function GET(
       },
     });
 
-    if (!user) {
+    if (!userData) {
       return new NextResponse('Utilisateur non trouvé', { status: 404 });
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json(userData);
   } catch (error) {
     console.error('Error fetching user profile:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
@@ -102,13 +102,13 @@ export async function PATCH(
 ) {
   try {
     // Vérifier que l'utilisateur est authentifié
-    const { user } = auth();
-    if (!user?.id) {
+    const session = await auth();
+    if (!session?.user?.id) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
     // Vérifier que l'utilisateur met à jour son propre profil ou est un administrateur
-    if (user.id !== params.id && user.role !== 'ADMIN') {
+    if (session.user.id !== params.id && session.user.role !== 'ADMIN') {
       return new NextResponse('Forbidden', { status: 403 });
     }
 
@@ -121,7 +121,7 @@ export async function PATCH(
         name: data.name,
         image: data.image,
         // Ne pas permettre la mise à jour du rôle sauf pour les administrateurs
-        ...(session.role === 'ADMIN' && { role: data.role }),
+        ...(session.user.role === 'ADMIN' && { role: data.role }),
       },
       select: {
         id: true,

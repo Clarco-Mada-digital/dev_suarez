@@ -19,6 +19,13 @@ const Nav = () => {
         Projets
       </Link>
 
+      <Link
+        href="/assistant"
+        className="flex items-center gap-2 font-medium hover:text-blue-500 transition-all"
+      >
+        Assistant
+      </Link>
+
       {status === "unauthenticated" ? (
         <>
           <Link href="/sign-in" className="capitalize font-medium hover:text-blue-500 transition-all">
@@ -32,6 +39,9 @@ const Nav = () => {
         <>
           <Link href="/profile" className="capitalize font-medium hover:text-blue-500 transition-all">
             Profil
+          </Link>
+          <Link href="/quotes" className="capitalize font-medium hover:text-blue-500 transition-all">
+            Devis
           </Link>
           <MyUserButton />
         </>

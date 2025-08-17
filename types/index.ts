@@ -48,6 +48,7 @@ export interface UserProfile {
   }[];
   reviews: Review[];
   averageRating: number;
+  ratingCount?: number;
   completedProjects: number;
   memberSince: Date;
   languages: {
@@ -71,8 +72,10 @@ export interface CardUserProps {
   avatarUrl: string;
   availability: boolean;
   rating?: number;
+  ratingCount?: number;
   hourlyRate?: number;
   location?: string;
+  completedProjects?: number;
 }
 
 // Types pour les filtres

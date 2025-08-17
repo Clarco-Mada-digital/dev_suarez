@@ -1,4 +1,6 @@
 import type { NextAuthConfig } from 'next-auth';
+
+type UserRole = 'ADMIN' | 'USER' | 'FREELANCER' | 'CLIENT';
  
 export const authConfig = {
   pages: {
@@ -34,7 +36,7 @@ export const authConfig = {
     },
     session({ session, token }) {
       session.user.id = token.id as string;
-      session.user.role = token.role as string;
+      session.user.role = token.role as UserRole;
       return session;
     },
   },

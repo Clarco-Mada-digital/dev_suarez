@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import { Button } from './ui/button';
 import { usePathname } from 'next/navigation';
-import { auth } from '@/auth';
+import { useSession, signOut } from 'next-auth/react';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const email = typeof window !== 'undefined' ? localStorage.getItem('email') : null;
+  const { status } = useSession();
 
   return (
     <nav className="bg-white shadow-sm">
@@ -53,15 +53,12 @@ export default function Navbar() {
             </div>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
-            {email ? (
+            {status === 'authenticated' ? (
               <div className="ml-3 relative">
                 <Button
                   variant="outline"
                   className="text-sm"
-                  onClick={() => {
-                    auth.removeEmail();
-                    window.location.href = '/sign-in';
-                  }}
+                  onClick={() => signOut({ callbackUrl: '/sign-in' })}
                 >
                   Déconnexion
                 </Button>

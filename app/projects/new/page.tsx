@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { auth } from '@/app/api/auth/[...nextauth]/route';
+import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { ProjectForm } from '@/components/projects/ProjectForm';
 import UnauthorizedMessage from '@/components/UnauthorizedMessage';
@@ -13,8 +13,8 @@ export default async function NewProjectPage() {
     return <UnauthorizedMessage message="Vous devez être connecté pour publier un projet." showLoginButton={true} />;
   }
 
-  if (userRole !== 'CLIENT') {
-    return <UnauthorizedMessage message="Seuls les clients peuvent publier des projets." />;
+  if (userRole !== 'CLIENT' && userRole !== 'ADMIN') {
+    return <UnauthorizedMessage message="Seuls les clients et les administrateurs peuvent publier des projets." />;
   }
 
   const categories = await prisma.projectCategory.findMany({

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { auth } from '@/app/api/auth/[...nextauth]/route';
+import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import ProfileDisplay from '@/components/user/ProfileDisplay';
 
@@ -73,7 +73,9 @@ export default async function UserProfilePage({ params }: { params: { id: string
       awards: user.profile.awards,
       availability: user.profile.availability,
       rating: user.profile.rating,
+      ratingCount: (user.profile as any)?.ratingCount ?? 0,
       hourlyRate: user.profile.hourlyRate,
+      completedProjectsCount: (user.profile as any)?.completedProjectsCount ?? 0,
     } : null,
     projectsAsClient: user.projectsAsClient.map(project => ({
       id: project.id,

@@ -4,6 +4,7 @@ import { CategoryDetail } from "@/components/CategoryDetail"
 import { LoadingSkeleton } from "@/components/Loading"
 import { CategoryBanner } from "@/components/CategoryBanner"
 import { Breadcrumb } from "@/components/Breadcrumb"
+import { prisma } from "@/lib/prisma"
 
 // Données temporaires - À remplacer par des appels API
 const categories = {
@@ -236,19 +237,25 @@ const categories = {
   }
 }
 
-export default function CategoryPage({ 
+export default async function CategoryPage({ 
   params, 
   searchParams 
 }: { 
   params: { id: string }
   searchParams: { [key: string]: string | string[] | undefined }
 }) {
-  // Récupérer la catégorie correspondante ou renvoyer une 404
-  const category = categories[params.id as keyof typeof categories]
-  
-  // Vérifier si la catégorie existe
-  if (!category) {
-    // Afficher une page 404 personnalisée
+  // Récupérer la catégorie depuis la base et fusionner avec un fallback local
+  // Note: cette page accepte aussi des IDs numériques hérités (fallback)
+  let resolvedDbCategory = null as null | { id: string; name: string; description: string | null; icon: string | null }
+  try {
+    resolvedDbCategory = await prisma.projectCategory.findUnique({ where: { id: params.id } })
+  } catch {
+    resolvedDbCategory = null
+  }
+
+  const fallbackCategory = categories[params.id as keyof typeof categories]
+
+  if (!resolvedDbCategory && !fallbackCategory) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center px-4 py-12">
         <div className="max-w-md w-full text-center">
@@ -266,6 +273,136 @@ export default function CategoryPage({
         </div>
       </div>
     )
+  }
+
+  // Déterminer l'ID de catégorie à utiliser pour la DB (essaye par nom si l'ID est un fallback numérique)
+  let chosenDbCategory = resolvedDbCategory
+  if (!chosenDbCategory && fallbackCategory) {
+    try {
+      const keyword = fallbackCategory.name.split(/[&-]/)[0]?.trim() || fallbackCategory.name
+      chosenDbCategory = await prisma.projectCategory.findFirst({
+        where: { name: { contains: keyword } },
+      })
+    } catch {}
+  }
+
+  // Récupérer les freelances liés à la catégorie (via leurs offres sur des projets de cette catégorie)
+  let dbFreelancers: Array<{
+    id: string
+    name: string
+    title: string
+    skills: string[]
+    rating: number
+    location: string
+    available: boolean
+    image: string
+    hourlyRate: number
+  }> = []
+
+  if (chosenDbCategory) {
+    const users = await prisma.user.findMany({
+      where: {
+        bidsAsFreelancer: {
+          some: { project: { categoryId: chosenDbCategory.id } },
+        },
+      },
+      include: { profile: true },
+    })
+
+    dbFreelancers = users.map((u) => {
+      const skills = (u.profile?.skills || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      return {
+        id: u.id,
+        name: u.name || 'Freelance',
+        title: (u.profile as any)?.jobTitle || 'Freelance',
+        skills,
+        rating: u.profile?.rating ?? 4.5,
+        location: u.profile?.location || '—',
+        available: u.profile?.availability ?? true,
+        image: u.image || `https://i.pravatar.cc/150?u=${u.id}`,
+        hourlyRate: (u.profile?.hourlyRate as number | null) ?? 30,
+      }
+    })
+  }
+
+  // Récupérer des compétences populaires à partir des projets de la catégorie
+  let dbPopularSkills: { id: string; name: string }[] = []
+  let skillNames: string[] = []
+  if (chosenDbCategory) {
+    const skillsRows = await prisma.projectSkill.findMany({
+      where: { project: { is: { categoryId: chosenDbCategory.id } } },
+      select: { name: true },
+    })
+    const unique = Array.from(new Set(skillsRows.map((s) => s.name.trim()).filter(Boolean)))
+    skillNames = unique
+    dbPopularSkills = unique.slice(0, 12).map((name) => ({ id: name.toLowerCase().replace(/\s+/g, '-'), name }))
+  }
+
+  // Recherche élargie: si peu ou pas de bids, compléter avec les freelances dont les compétences correspondent aux compétences projets de la catégorie
+  if (chosenDbCategory) {
+    // Si pas de skills côté projets, utiliser les skills populaires du fallback local
+    if ((!skillNames || skillNames.length === 0) && fallbackCategory?.popularSkills?.length) {
+      skillNames = fallbackCategory.popularSkills.map((s: { id: string; name: string }) => s.name)
+    }
+
+    const allFreelancers = await prisma.user.findMany({
+      where: { role: 'FREELANCER' },
+      include: { profile: true },
+    })
+
+    const lowerSkillNames = new Set(skillNames.map((s) => s.toLowerCase()))
+    const nameFirstToken = chosenDbCategory.name.split(/[\s&-]/)[0]?.toLowerCase() || ''
+
+    const matchedBySkills = allFreelancers.filter((u) => {
+      const skillsStr = (u.profile?.skills || '').toLowerCase()
+      const title = (u.profile?.jobTitle || '').toLowerCase()
+      const hasSkill = Array.from(lowerSkillNames).some((s) => s && skillsStr.includes(s))
+      const matchByName = nameFirstToken && (skillsStr.includes(nameFirstToken) || title.includes(nameFirstToken))
+      return hasSkill || matchByName
+    })
+
+    const mapped = matchedBySkills.map((u) => {
+      const skills = (u.profile?.skills || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      return {
+        id: u.id,
+        name: u.name || 'Freelance',
+        title: (u.profile as any)?.jobTitle || 'Freelance',
+        skills,
+        rating: u.profile?.rating ?? 4.5,
+        location: u.profile?.location || '—',
+        available: u.profile?.availability ?? true,
+        image: u.image || `https://i.pravatar.cc/150?u=${u.id}`,
+        hourlyRate: (u.profile?.hourlyRate as number | null) ?? 30,
+      }
+    })
+
+    // Fusionner et dédupliquer avec les freelances trouvés via bids
+    const byId = new Map<string, typeof mapped[number]>()
+    ;[...dbFreelancers, ...mapped].forEach((f) => byId.set(f.id, f))
+    dbFreelancers = Array.from(byId.values())
+  }
+
+  const category = {
+    ...(fallbackCategory || {
+      id: params.id,
+      name: resolvedDbCategory?.name || 'Catégorie',
+      description: resolvedDbCategory?.description || '',
+      icon: resolvedDbCategory?.icon || '/banner-default.jpg',
+      popularSkills: [] as { id: string; name: string }[],
+      freelancers: [] as any[],
+    }),
+    id: chosenDbCategory?.id || resolvedDbCategory?.id || fallbackCategory?.id || params.id,
+    name: chosenDbCategory?.name || resolvedDbCategory?.name || fallbackCategory?.name || 'Catégorie',
+    description: chosenDbCategory?.description || resolvedDbCategory?.description || fallbackCategory?.description || '',
+    icon: (chosenDbCategory?.icon as string | undefined) || (resolvedDbCategory?.icon as string | undefined) || fallbackCategory?.icon || '/banner-default.jpg',
+    popularSkills: dbPopularSkills.length ? dbPopularSkills : (fallbackCategory?.popularSkills || []),
+    freelancers: dbFreelancers,
   }
 
   const currentPage = searchParams.page ? parseInt(searchParams.page as string) : 1
@@ -337,7 +474,13 @@ export default function CategoryPage({
 
 // Génération des pages statiques
 export async function generateStaticParams() {
-  return Object.keys(categories).map((id) => ({
-    id,
-  }))
+  try {
+    const dbIds = await prisma.projectCategory.findMany({ select: { id: true } })
+    if (dbIds.length) {
+      return dbIds.map((c) => ({ id: c.id }))
+    }
+  } catch (e) {
+    // ignore and fallback to local
+  }
+  return Object.keys(categories).map((id) => ({ id }))
 }

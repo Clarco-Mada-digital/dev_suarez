@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import RequestQuoteSheet from '@/components/quotes/RequestQuoteSheet';
+import RateFreelancerPanel from '@/components/projects/RateFreelancerPanel';
 
 interface ProfileData {
   id: string;
@@ -27,7 +29,9 @@ interface ProfileData {
     awards: string | null;
     availability: boolean;
     rating: number | null;
+    ratingCount?: number;
     hourlyRate: number | null;
+    completedProjectsCount?: number;
   } | null;
   projectsAsClient: Array<{ id: string; title: string; description: string; tags: string[] }>;
   acceptedBidsAsFreelancer: Array<{ id: string; proposal: string; projectTitle: string }>;
@@ -45,6 +49,9 @@ export default function ProfileDisplay({ profile, isCurrentUser }: ProfileDispla
   const skillsArray = profile.profile?.skills ? profile.profile.skills.split(', ').map(s => s.trim()) : [];
   const languagesArray = profile.profile?.languages ? profile.profile.languages.split(', ').map(s => s.trim()) : [];
   const awardsArray = profile.profile?.awards ? profile.profile.awards.split(', ').map(s => s.trim()) : [];
+  const hasFreelancerProjects = profile.role === 'FREELANCER' && profile.acceptedBidsAsFreelancer.length > 0;
+  const hasClientProjects = profile.role === 'CLIENT' && profile.projectsAsClient.length > 0;
+  const hasLeftContent = hasFreelancerProjects || hasClientProjects;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
@@ -79,14 +86,21 @@ export default function ProfileDisplay({ profile, isCurrentUser }: ProfileDispla
                         {profile.profile?.jobTitle || profile.role}
                       </p>
                     </div>
-                    
-                    {isCurrentUser && (
+                    {isCurrentUser ? (
                       <Button
                         onClick={() => router.push('/profile')}
                         className="mt-4 sm:mt-0"
                       >
                         Modifier le profil
                       </Button>
+                    ) : (
+                      profile.role === 'FREELANCER' && (
+                        <RequestQuoteSheet
+                          freelancerId={profile.id}
+                          freelancerName={profile.name}
+                          triggerClassName="mt-4 sm:mt-0"
+                        />
+                      )
                     )}
                   </div>
                   
@@ -140,8 +154,9 @@ export default function ProfileDisplay({ profile, isCurrentUser }: ProfileDispla
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Colonne de gauche */}
+            {hasLeftContent && (
             <div className="lg:col-span-2 space-y-8">
-              {profile.acceptedBidsAsFreelancer.length > 0 && profile.role === 'FREELANCER' && (
+              {hasFreelancerProjects && (
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
                   <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
@@ -164,7 +179,7 @@ export default function ProfileDisplay({ profile, isCurrentUser }: ProfileDispla
                 </div>
               )}
 
-              {profile.projectsAsClient.length > 0 && profile.role === 'CLIENT' && (
+              {hasClientProjects && (
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
                   <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
@@ -197,9 +212,10 @@ export default function ProfileDisplay({ profile, isCurrentUser }: ProfileDispla
                 </div>
               )}
             </div>
+            )}
             
             {/* Colonne de droite */}
-            <div className="space-y-8">
+            <div className={`${hasLeftContent ? 'lg:sticky lg:top-24' : 'lg:col-span-3'} space-y-8`}>
               {/* Détails supplémentaires */}
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
                 <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
@@ -251,18 +267,31 @@ export default function ProfileDisplay({ profile, isCurrentUser }: ProfileDispla
                         </p>
                       </div>
                     )}
-                    {profile.profile?.rating !== null && profile.profile?.rating !== undefined && (
+                    {typeof profile.profile?.rating === 'number' && profile.profile.rating > 0 && (
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Note moyenne</h3>
                         <div className="flex items-center mt-1">
                           <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
-                          <p className="text-gray-900 dark:text-white">{profile.profile.rating.toFixed(1)} / 5</p>
+                          <p className="text-gray-900 dark:text-white">
+                            {profile.profile.rating.toFixed(1)} / 5{typeof profile.profile?.ratingCount === 'number' ? ` (${profile.profile.ratingCount} votes)` : ''}
+                          </p>
                         </div>
+                      </div>
+                    )}
+                    {typeof profile.profile?.completedProjectsCount === 'number' && (
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Projets complétés</h3>
+                        <p className="mt-1 text-gray-900 dark:text-white">{profile.profile.completedProjectsCount}</p>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
+
+              {/* Notation depuis le profil (card dynamique gérée dans RateFreelancerPanel) */}
+              {!isCurrentUser && profile.role === 'FREELANCER' && (
+                <RateFreelancerPanel freelancerId={profile.id} />
+              )}
               
               {languagesArray.length > 0 && (
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">

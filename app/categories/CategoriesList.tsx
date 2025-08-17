@@ -31,7 +31,7 @@ export function CategoriesList({ categories, searchTerm = '' }: CategoriesListPr
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {filteredCategories.map((category) => (
-        <Link key={category.id} href={`/projects?category=${category.id}`} className="block h-full">
+        <Link key={category.id} href={`/categories/${category.id}`} className="block h-full">
           <Card className="h-full transition-all hover:shadow-lg hover:border-primary/20">
             <CardHeader>
               <div className="flex items-center space-x-4">

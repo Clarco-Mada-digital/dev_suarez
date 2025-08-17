@@ -1,57 +1,31 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// Types pour les offres (bids)
-interface Bid {
-  amount: number | null;
-  status: string;
-  project?: {
-    title: string;
-    skills: Array<{ name: string }>;
-  };
-}
+// ... (garder les mêmes types d'interface)
 
-// Type pour le freelance formaté
-interface FormattedFreelancer {
-  id: string;
-  name: string;
-  email: string;
-  image: string;
-  role: string;
-  hourlyRate: number;
-  skills: string[];
-  completedProjects: number;
-  rating: number;
-}
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   console.log('Début de la récupération des freelancers');
+
+  const { searchParams } = new URL(request.url);
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = parseInt(searchParams.get('limit') || '10', 10);
+  const skip = (page - 1) * limit;
   
   try {
-    // Récupérer les freelancers depuis la base de données
+    // Récupérer tous les freelancers pour le tri en mémoire
     const freelancers = await prisma.user.findMany({
       where: {
         role: 'FREELANCER',
       },
       include: {
-        profile: true, // Inclure le profil utilisateur
+        profile: true,
         bidsAsFreelancer: {
-          where: {
-            status: 'ACCEPTED',
-          },
+          where: { status: 'ACCEPTED' },
           include: {
             project: {
               select: {
-                category: {
-                  select: {
-                    name: true,
-                  },
-                },
-                skills: {
-                  select: {
-                    name: true,
-                  },
-                },
+                category: { select: { name: true } },
+                skills: { select: { name: true } },
               },
             },
           },
@@ -59,26 +33,21 @@ export async function GET() {
       },
     });
 
+    const totalFreelancers = freelancers.length;
+
     // Transformer les données
     const formattedFreelancers = freelancers.map((user) => {
-      // Utiliser les données du profil si disponibles
       const profile = user.profile;
-
-      // Calculer le taux horaire moyen (si non défini dans le profil)
-      const hourlyRate = profile?.hourlyRate || user.bidsAsFreelancer.reduce((acc, bid) => acc + (bid.amount || 0), 0) / user.bidsAsFreelancer.length || 0;
-
-      // Extraire les compétences (depuis le profil ou les projets)
+      const hourlyRate = profile?.hourlyRate || user.bidsAsFreelancer.reduce((acc, bid) => acc + (bid.amount || 0), 0) / (user.bidsAsFreelancer.length || 1) || 0;
       const skills = profile?.skills?.split(', ').map(s => s.trim()) || Array.from(new Set(
         user.bidsAsFreelancer
           .flatMap(bid => bid.project?.skills || [])
           .map(skill => skill.name)
       ));
-
-      // Calculer le nombre de projets terminés
-      const completedProjects = user.bidsAsFreelancer.length;
-
-      // Utiliser la note du profil ou simuler
-      const rating = profile?.rating || Math.min(5, (hourlyRate / 100) * 5);
+      const completedProjectsCount = (profile?.completedProjectsCount ?? 0);
+      const fallbackCompleted = user.bidsAsFreelancer.length;
+      const effectiveCompleted = completedProjectsCount || fallbackCompleted;
+      const rating = profile?.rating || Math.min(5, (effectiveCompleted / 10) * 5);
 
       return {
         id: user.id,
@@ -88,18 +57,28 @@ export async function GET() {
         role: user.role || 'FREELANCER',
         hourlyRate,
         skills,
-        completedProjects,
+        completedProjectsCount: completedProjectsCount || fallbackCompleted,
         rating,
+        ratingCount: profile?.ratingCount ?? 0,
         jobTitle: profile?.jobTitle || 'Freelance',
         availability: profile?.availability || false,
         location: profile?.location || 'Non spécifié',
       };
     });
 
-    // Trier les freelancers par nombre de projets terminés
-    const sortedFreelancers = formattedFreelancers.sort((a, b) => b.completedProjects - a.completedProjects);
+    // Trier les freelancers par note (meilleure note en premier)
+    const sortedFreelancers = formattedFreelancers.sort((a, b) => b.rating - a.rating);
 
-    return NextResponse.json(sortedFreelancers);
+    // Paginer les résultats triés
+    const paginatedFreelancers = sortedFreelancers.slice(skip, skip + limit);
+
+    return NextResponse.json({
+      freelancers: paginatedFreelancers,
+      total: totalFreelancers,
+      page,
+      limit,
+    });
+
   } catch (error) {
     console.error('Erreur lors de la récupération des freelancers:', error);
     return new NextResponse(

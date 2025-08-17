@@ -1,23 +1,24 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { notFound } from 'next/navigation';
 import { redirect } from 'next/navigation';
-import { auth } from '@/app/api/auth/[...nextauth]/route';
+import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { HeroSection } from '@/components/HeroSection';
 import Image from 'next/image';
 import { ProjectBidForm } from '@/components/projects/ProjectBidForm';
+import { AssignBidButton } from '@/components/projects/AssignBidButton';
+import { CompleteProjectCard } from '@/components/projects/CompleteProjectCard';
+import { Star } from 'lucide-react';
 
 export default async function ProjectPage({ params }: { params: { id: string } }) {
   const session = await auth();
   const userId = session?.user?.id;
-
-  if (!userId) {
-    redirect('/sign-in');
-  }
+  const isAdmin = session?.user?.role === 'ADMIN';
 
   const project = await prisma.project.findUnique({
     where: { id: params.id },
@@ -31,11 +32,28 @@ export default async function ProjectPage({ params }: { params: { id: string } }
           image: true,
         },
       },
+      assignedFreelancer: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          profile: true,
+        },
+      },
       skills: true,
       bids: {
-        where: {
-          freelancerId: userId,
+        include: {
+          freelancer: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+              role: true,
+              profile: true,
+            },
+          },
         },
+        orderBy: { createdAt: 'desc' },
       },
     },
   });
@@ -44,8 +62,9 @@ export default async function ProjectPage({ params }: { params: { id: string } }
     notFound();
   }
 
-  const hasBid = project.bids.length > 0;
-  const isClient = userId === project.clientId;
+  // Vérifications pour l'utilisateur connecté
+  const hasBid = userId ? project.bids.some((b) => b.freelancerId === userId) : false;
+  const isClient = userId ? userId === project.clientId : false;
 
   return (
     <div className="flex flex-col">
@@ -108,12 +127,70 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                 </div>
               </CardContent>
             </Card>
+
+            {/* Candidatures reçues - visible pour le client et l'admin */}
+            {(isClient || isAdmin) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Candidatures reçues</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {project.bids.length === 0 ? (
+                    <p className="text-muted-foreground">Aucune candidature reçue pour le moment.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {project.bids.map((bid) => (
+                        <div key={bid.id} className="flex flex-col gap-3 rounded-md border p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={bid.freelancer?.image || ''} alt={bid.freelancer?.name || 'Freelance'} />
+                                <AvatarFallback>
+                                  {(bid.freelancer?.name?.charAt(0) || 'F').toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="font-medium">
+                                  <a href={`/profile/${bid.freelancer?.id}`} className="hover:underline">
+                                    {bid.freelancer?.name || 'Freelance'}
+                                  </a>
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {bid.freelancer?.profile?.jobTitle || '—'}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline">{bid.status}</Badge>
+                              <span className="font-medium">{bid.amount} €</span>
+                              {(isClient || isAdmin) && project.status === 'OPEN' && !project.assignedFreelancer && (
+                                <AssignBidButton projectId={project.id} bidId={bid.id} />
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {bid.proposal.length > 220 ? bid.proposal.slice(0, 220) + '…' : bid.proposal}
+                          </div>
+                          {bid.freelancer?.profile?.skills && (
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              {bid.freelancer.profile.skills.split(',').slice(0, 6).map((s, idx) => (
+                                <Badge key={idx} variant="secondary">{s.trim()}</Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
           
           {/* Colonne de droite - Actions et détails */}
           <div className="space-y-6">
             {/* Carte Actions */}
-            {isClient && (
+            {(isClient || isAdmin) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Actions</CardTitle>
@@ -131,6 +208,54 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Freelance assigné */}
+            {project.assignedFreelancer && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Freelance assigné</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={project.assignedFreelancer.image || ''} alt={project.assignedFreelancer.name || 'Freelance'} />
+                      <AvatarFallback>{(project.assignedFreelancer.name?.charAt(0) || 'F').toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">
+                        <a href={`/profile/${project.assignedFreelancer.id}`} className="hover:underline">
+                          {project.assignedFreelancer.name || 'Freelance'}
+                        </a>
+                      </div>
+                      <div className="text-sm text-muted-foreground truncate">
+                        {project.assignedFreelancer.profile?.jobTitle || '—'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-3 space-y-1 text-sm">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                      <span className="font-medium">
+                        {typeof project.assignedFreelancer.profile?.rating === 'number' ? project.assignedFreelancer.profile.rating.toFixed(1) : '—'} / 5
+                      </span>
+                      {typeof (project.assignedFreelancer.profile as any)?.ratingCount === 'number' && (
+                        <span className="text-muted-foreground">({(project.assignedFreelancer.profile as any).ratingCount} votes)</span>
+                      )}
+                    </div>
+                    {typeof (project as any).freelancerRating === 'number' && (
+                      <div className="text-muted-foreground">Votre note: {(project as any).freelancerRating} / 5</div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Finaliser le projet + notation */}
+            {(isClient || isAdmin) && project.assignedFreelancer && (
+              (project.status === 'IN_PROGRESS' || (project.status === 'COMPLETED' && (project as any).freelancerRating == null)) && (
+                <CompleteProjectCard projectId={project.id} />
+              )
             )}
 
             {/* Carte Détails du projet */}
