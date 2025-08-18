@@ -65,7 +65,7 @@ const CardUser: React.FC<CardUserProps> = ({
             <p className="text-sm text-muted-foreground">{jobTitle}</p>
           </Link>
           
-          {rating > 0 && (
+          {(rating > 0) && ((ratingCount ?? 0) > 0) && (
             <div className="flex items-center bg-primary/10 px-2 py-1 rounded-full">
               <StarIcon className="w-4 h-4 text-yellow-500 fill-yellow-500 mr-1" />
               <span className="text-sm font-medium">

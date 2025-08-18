@@ -3,6 +3,7 @@
 import { useUser } from '@/hooks/use-user';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { ImageUpload } from '@/components/ui/image-upload';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,7 @@ import { toast } from 'sonner';
 import { Loader2, Save, User, Mail, Shield, MapPin, Link as LinkIcon, Briefcase, Phone, Star, DollarSign, CalendarCheck, Globe, Award } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: 'Le nom doit contenir au moins 2 caractères.' }),
@@ -36,7 +37,14 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export function UserProfile() {
-  const { user, loading, error, isAuthenticated } = useUser();
+  const { user, loading, error, isAuthenticated, mutate } = useUser();
+  const [currentImage, setCurrentImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.image) {
+      setCurrentImage(user.image);
+    }
+  }, [user?.image]);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -81,22 +89,54 @@ export function UserProfile() {
 
   const onSubmit = async (data: ProfileFormValues) => {
     try {
-      const response = await fetch(`/api/profile/${user?.id}`, {
+      if (!user?.id) {
+        throw new Error('Utilisateur non identifié');
+      }
+      
+      const response = await fetch(`/api/users/${user.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          image: currentImage,
+          profile: {
+            bio: data.bio,
+            location: data.location,
+            website: data.website,
+            jobTitle: data.jobTitle,
+            company: data.company,
+            phoneNumber: data.phoneNumber,
+            skills: data.skills,
+            languages: data.languages,
+            awards: data.awards,
+            availability: data.availability,
+            rating: data.rating,
+            hourlyRate: data.hourlyRate,
+          },
+        }),
       });
 
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        throw new Error('Échec de la mise à jour du profil');
+        throw new Error(responseData.message || 'Échec de la mise à jour du profil');
       }
 
-      toast.success('Profil mis à jour avec succès');
+      // Mettre à jour les données utilisateur avec la réponse de l'API
+      if (responseData.user) {
+        // Mettre à jour le contexte utilisateur ou recharger les données
+        // Cela dépend de la façon dont useUser est implémenté
+        // Pour l'instant, on se contente d'afficher un message de succès
+        toast.success(responseData.message || 'Profil mis à jour avec succès');
+      } else {
+        throw new Error('Réponse inattendue du serveur');
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error('Une erreur est survenue lors de la mise à jour du profil');
+      toast.error(error instanceof Error ? error.message : 'Une erreur est survenue lors de la mise à jour du profil');
     }
   };
 
@@ -136,21 +176,67 @@ export function UserProfile() {
   }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <div className="flex items-center space-x-4">
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={user.image || ''} alt={user.name || ''} />
-            <AvatarFallback>
-              {user.name
-                ? user.name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')
-                : 'U'}
-            </AvatarFallback>
-          </Avatar>
-          <div>
+    <Card className="w-full mx-auto">
+      <CardHeader className="pb-2">
+        <div className="flex flex-col items-center space-y-4">
+<ImageUpload
+            value={currentImage || ''}
+            onChange={async (url) => {
+              if (url) {
+                try {
+                  // Mettre à jour l'état local immédiatement pour un retour visuel instantané
+                  setCurrentImage(url);
+                  
+                  // Mettre à jour le serveur
+                  const response = await fetch(`/api/users/${user.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ image: url }),
+                  });
+
+                  if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || 'Échec de la mise à jour de l\'image');
+                  }
+
+                  // Mettre à jour les données utilisateur
+                  await mutate();
+                  toast.success('Photo de profil mise à jour avec succès');
+                } catch (error) {
+                  console.error('Error updating profile image:', error);
+                  // Revenir à l'ancienne image en cas d'erreur
+                  setCurrentImage(user.image || null);
+                  toast.error(error instanceof Error ? error.message : 'Erreur lors de la mise à jour de la photo de profil');
+                }
+              } else {
+                // Gérer la suppression de l'image
+                try {
+                  setCurrentImage(null);
+                  const response = await fetch(`/api/users/${user.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ image: null }),
+                  });
+
+                  if (!response.ok) {
+                    throw new Error('Échec de la suppression de la photo de profil');
+                  }
+
+                  await mutate();
+                  toast.success('Photo de profil supprimée avec succès');
+                } catch (error) {
+                  console.error('Error removing profile image:', error);
+                  setCurrentImage(user.image || null);
+                  toast.error('Erreur lors de la suppression de la photo de profil');
+                }
+              }
+            }}
+          />
+          <div className="text-center">
             <CardTitle className="text-2xl">{user.name || 'Utilisateur'}</CardTitle>
             <p className="text-sm text-muted-foreground">{user.email}</p>
           </div>

@@ -47,7 +47,9 @@ export async function GET(request: NextRequest) {
       const completedProjectsCount = (profile?.completedProjectsCount ?? 0);
       const fallbackCompleted = user.bidsAsFreelancer.length;
       const effectiveCompleted = completedProjectsCount || fallbackCompleted;
-      const rating = profile?.rating || Math.min(5, (effectiveCompleted / 10) * 5);
+      const ratingCount = profile?.ratingCount ?? 0;
+      // Only expose an average rating when there are votes. Otherwise keep it at 0.
+      const rating = (ratingCount > 0 && typeof profile?.rating === 'number') ? profile.rating : 0;
 
       return {
         id: user.id,
@@ -59,7 +61,7 @@ export async function GET(request: NextRequest) {
         skills,
         completedProjectsCount: completedProjectsCount || fallbackCompleted,
         rating,
-        ratingCount: profile?.ratingCount ?? 0,
+        ratingCount,
         jobTitle: profile?.jobTitle || 'Freelance',
         availability: profile?.availability || false,
         location: profile?.location || 'Non spécifié',

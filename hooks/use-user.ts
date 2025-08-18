@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 
 interface UserProfileData {
@@ -33,6 +33,7 @@ interface UseUserResult {
   loading: boolean;
   isAuthenticated: boolean;
   error: Error | null;
+  mutate: () => Promise<void>;
 }
 
 export function useUser(): UseUserResult {
@@ -41,53 +42,59 @@ export function useUser(): UseUserResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (status === 'loading') {
-        setLoading(true);
-        return;
-      }
+  const fetchUserData = useCallback(async () => {
+    if (status === 'loading') {
+      setLoading(true);
+      return;
+    }
 
-      if (status === 'authenticated' && session?.user?.id) {
-        try {
-          const response = await fetch(`/api/profile/${session.user.id}`);
-          if (!response.ok) {
-            throw new Error('Failed to fetch user profile');
-          }
-          const apiData = await response.json();
-          // apiData shape comes from /api/profile/[id]/route.ts and includes { id, name, email, image, role, profile, ... }
-          setUser({
-            id: session.user.id,
-            name: apiData?.name ?? session.user.name,
-            email: apiData?.email ?? session.user.email,
-            image: apiData?.image ?? session.user.image,
-            role: apiData?.role ?? session.user.role,
-            profile: apiData?.profile ?? undefined,
-          });
-          setError(null);
-        } catch (err) {
-          console.error('Error fetching user profile:', err);
-          setError(err instanceof Error ? err : new Error('An unknown error occurred'));
-          setUser(null);
-        } finally {
-          setLoading(false);
-        }
-      } else if (status === 'unauthenticated') {
-        setUser(null);
-        setError(new Error('User not authenticated'));
-        setLoading(false);
-      } else {
-        setLoading(false);
-      }
-    };
+    if (!session?.user?.id) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
 
-    fetchUserProfile();
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/users/${session.user.id}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+      
+      const apiData = await response.json();
+      setUser({
+        id: session.user.id,
+        name: apiData?.name ?? session.user.name,
+        email: apiData?.email ?? session.user.email,
+        image: apiData?.image ?? session.user.image,
+        role: apiData?.role ?? session.user.role,
+        profile: apiData?.profile ?? undefined,
+      });
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+      setError(err instanceof Error ? err : new Error('An error occurred'));
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   }, [session, status]);
+
+  // Fonction pour forcer le rafraîchissement des données
+  const mutate = useCallback(async () => {
+    await fetchUserData();
+  }, [fetchUserData]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
 
   return {
     user,
     loading,
     isAuthenticated: status === 'authenticated',
     error,
+    mutate,
   };
 }

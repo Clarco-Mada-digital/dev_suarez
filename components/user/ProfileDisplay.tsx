@@ -267,15 +267,20 @@ export default function ProfileDisplay({ profile, isCurrentUser }: ProfileDispla
                         </p>
                       </div>
                     )}
-                    {typeof profile.profile?.rating === 'number' && profile.profile.rating > 0 && (
+                    {typeof profile.profile?.ratingCount === 'number' && profile.profile.ratingCount > 0 ? (
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Note moyenne</h3>
                         <div className="flex items-center mt-1">
                           <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
                           <p className="text-gray-900 dark:text-white">
-                            {profile.profile.rating.toFixed(1)} / 5{typeof profile.profile?.ratingCount === 'number' ? ` (${profile.profile.ratingCount} votes)` : ''}
+                            {(profile.profile?.rating ?? 0).toFixed(1)} / 5 ({profile.profile.ratingCount} votes)
                           </p>
                         </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Note moyenne</h3>
+                        <p className="mt-1 text-gray-900 dark:text-white">Pas encore noté</p>
                       </div>
                     )}
                     {typeof profile.profile?.completedProjectsCount === 'number' && (

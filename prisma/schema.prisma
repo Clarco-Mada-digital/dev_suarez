@@ -76,23 +76,23 @@ model VerificationToken {
 }
 
 model UserProfile {
-  id           String   @id @default(cuid())
-  bio          String?
-  location     String?
-  website      String?
-  jobTitle     String?  @map("job_title")
-  company      String?
-  phoneNumber  String?  @map("phone_number")
-  skills       String?
-  languages    String? // Ex: "Français, Anglais"
-  awards       String? // Ex: "Meilleur Développeur 2023, Prix de l'Innovation"
-  availability Boolean  @default(false)
-  rating       Float?
-  ratingCount  Int      @default(0)
-  completedProjectsCount Int @default(0)
-  hourlyRate   Float?   @map("hourly_rate")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id                    String   @id @default(cuid())
+  bio                   String?
+  location              String?
+  website               String?
+  jobTitle              String?  @map("job_title")
+  company               String?
+  phoneNumber           String?  @map("phone_number")
+  skills                String?
+  languages             String?   // Ex: "Français, Anglais"
+  awards                String?   // Ex: "Meilleur Développeur 2023, Prix de l'Innovation"
+  availability          Boolean   @default(false)
+  rating                Float?    @default(0)
+  hourlyRate            Float?    @map("hourly_rate") @default(0)
+  ratingCount           Int       @default(0)
+  completedProjectsCount Int      @default(0)
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
 
   // Relations
   userId String    @unique
@@ -154,6 +154,14 @@ model ProjectBid {
 
   @@index([projectId])
   @@index([freelancerId])
+}
+
+model AISettings {
+  id          String   @id @default("global")
+  provider    String   @default("mock")
+  model       String?
+  temperature Float    @default(0.4)
+  updatedAt   DateTime @updatedAt
 }
 
 model ProjectSkill {

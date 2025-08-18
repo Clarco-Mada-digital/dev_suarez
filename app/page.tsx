@@ -65,7 +65,7 @@ export default function Home() {
 
   return (
     <section>
-      <Presentation />
+      <Presentation />      
 
       {/* ... (Slide des categories - pas de changement ici) */}
       <div className="-mt-14 flex justify-center relative">
@@ -124,6 +124,79 @@ export default function Home() {
           <Button variant="gradient">Demander des devies</Button>
         </Link>
       </div>
+
+      {/* Section Demande de devis par IA */}
+      <section className="py-16 bg-gradient-to-b from-background to-accent/10">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto bg-white dark:bg-card rounded-2xl shadow-lg overflow-hidden">
+            <div className="md:flex">
+              <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+                <h2 className="text-3xl font-bold text-foreground mb-4">
+                  Un projet en tête ?
+                  <span className="block text-primary mt-2">Obtenez un devis en 2 minutes</span>
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                  Notre assistant IA vous aide à définir votre projet et vous met en relation avec les meilleurs freelancers.
+                  Simple, rapide et sans engagement.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
+                    <Link href="/assistant">
+                      <NotebookPen className="mr-2 h-4 w-4" />
+                      Demander un devis
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg">
+                    <Link href="/pricing">
+                      Voir nos tarifs
+                    </Link>
+                  </Button>
+                </div>
+                <div className="mt-6 flex items-center text-sm text-muted-foreground">
+                  <div className="flex -space-x-2 mr-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary">
+                        {i}
+                      </div>
+                    ))}
+                  </div>
+                  <span>Étapes rapides et faciles</span>
+                </div>
+              </div>
+              <div className="hidden md:block md:w-1/2 bg-gradient-to-br from-primary/10 to-primary/5 relative">
+                <div className="absolute inset-0 bg-[url('/pattern.svg')] bg-center opacity-10"></div>
+                <div className="relative h-full flex items-center justify-center p-8">
+                  <div className="bg-white dark:bg-card p-6 rounded-xl shadow-lg max-w-xs">
+                    <div className="flex items-center mb-4">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary mr-3">
+                        <NotebookPen className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">Assistant IA</h4>
+                        <p className="text-xs text-muted-foreground">En ligne</p>
+                      </div>
+                    </div>
+                    <p className="text-sm mb-4">
+                      Bonjour ! Je peux vous aider à définir votre projet et à trouver le bon freelance. Par où commençons-nous ?
+                    </p>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="text-xs h-8">
+                        Site web
+                      </Button>
+                      <Button variant="outline" size="sm" className="text-xs h-8">
+                        Application
+                      </Button>
+                      <Button variant="outline" size="sm" className="text-xs h-8">
+                        Design
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Section top 50 de leur domaine */}
       <div className="mx-auto max-w-screen-xl px-4 py-12 sm:px-6 lg:px-8">

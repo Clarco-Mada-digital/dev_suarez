@@ -43,7 +43,7 @@ Bienvenue sur la plateforme Freelance Suarez, une application web moderne dével
 
 1. **Cloner le dépôt**
    ```bash
-   git clone [URL_DU_REPO]
+   git clone https://github.com/Clarco-Mada-digital/dev_suarez.git
    cd dev_suarez
    ```
 
