@@ -47,7 +47,7 @@ export default function FreelancersPage() {
       const query = searchQuery.toLowerCase();
       result = result.filter(freelancer => 
         freelancer.name.toLowerCase().includes(query) ||
-        freelancer.jobTitle.toLowerCase().includes(query) ||
+        (freelancer.jobTitle && freelancer.jobTitle.toLowerCase().includes(query)) ||
         freelancer.skills.some(skill => skill.toLowerCase().includes(query))
       );
     }
@@ -56,7 +56,7 @@ export default function FreelancersPage() {
     if (selectedCategories.length > 0) {
       result = result.filter(freelancer => 
         selectedCategories.some(category => 
-          freelancer.jobTitle.toLowerCase().includes(category.toLowerCase()) ||
+          (freelancer.jobTitle && freelancer.jobTitle.toLowerCase().includes(category.toLowerCase())) ||
           freelancer.skills.some(skill => 
             skill.toLowerCase().includes(category.toLowerCase())
           )
@@ -95,8 +95,8 @@ export default function FreelancersPage() {
         const rateB = b.hourlyRate || 0;
         comparison = rateA - rateB;
       } else if (sortBy === 'completedProjects') {
-        const projectsA = a.completedProjects || 0;
-        const projectsB = b.completedProjects || 0;
+        const projectsA = a.completedProjectsCount || 0;
+        const projectsB = b.completedProjectsCount || 0;
         comparison = projectsA - projectsB;
       }
       
@@ -286,15 +286,15 @@ export default function FreelancersPage() {
                   key={freelancer.id}
                   id={freelancer.id}
                   name={freelancer.name}
-                  jobTitle={freelancer.jobTitle}
+                  jobTitle={freelancer.jobTitle || 'Freelance'}
                   skills={freelancer.skills}
-                  avatarUrl={freelancer.avatarUrl}
+                  avatarUrl={freelancer.image || ''}
                   availability={freelancer.availability}
                   rating={freelancer.rating}
                   ratingCount={freelancer.ratingCount}
-                  hourlyRate={freelancer.hourlyRate}
-                  location={freelancer.location}
-                  completedProjects={freelancer.completedProjects}
+                  hourlyRate={freelancer.hourlyRate || 0}
+                  location={freelancer.location || 'Localisation non spécifiée'}
+                  completedProjects={freelancer.completedProjectsCount}
                 />
               ))
             ) : (

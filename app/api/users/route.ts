@@ -30,10 +30,7 @@ export async function GET() {
     });
 
     // Nettoyer les données sensibles avant de les envoyer
-    const sanitizedUsers = users.map(user => {
-      const { password, emailVerified, ...userData } = user;
-      return userData;
-    });
+    const sanitizedUsers = users.map(({ emailVerified, ...userData }) => userData);
 
     return NextResponse.json(sanitizedUsers);
   } catch (error) {
