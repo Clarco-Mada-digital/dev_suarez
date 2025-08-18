@@ -23,7 +23,7 @@ export default function AdminPage() {
     } else if (status === 'authenticated') {
       router.push('/');
     }
-  }, [status, session]);
+  }, [status, session, router]);
 
   const fetchUsers = async () => {
     try {

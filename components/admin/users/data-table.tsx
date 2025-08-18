@@ -12,6 +12,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  TableMeta,
 } from '@tanstack/react-table';
 
 import {
@@ -24,6 +25,10 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+
+interface CustomTableMeta<TData> extends TableMeta<TData> {
+  updateUser?: (userId: string, updatedUser: TData | null) => void;
+}
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -40,16 +45,16 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = useState({});
 
-  const table = useReactTable({
+  const table = useReactTable<TData>({
     data,
     columns: columns.map((column) => ({
       ...column,
       meta: {
-        ...column.meta,
+        ...(column.meta || {}),
         updateUser: (userId: string, updatedUser: TData | null) => {
           if (onUserUpdated) onUserUpdated(userId, updatedUser);
         },
-      },
+      } as CustomTableMeta<TData>,
     })),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,

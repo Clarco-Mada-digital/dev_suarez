@@ -41,24 +41,47 @@ export async function generateChat(opts: GenerateOptions): Promise<string> {
 
   if (provider === "openrouter") {
     const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) return mockCompletion(opts.messages);
+    if (!apiKey) {
+      console.error("OpenRouter API key is not configured");
+      return mockCompletion(opts.messages);
+    }
+    
     const model = opts.model || process.env.AI_MODEL || "openrouter/auto";
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: opts.messages,
-        temperature: opts.temperature ?? 0.5,
-        max_tokens: opts.max_tokens ?? 800,
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error?.message || "OpenRouter error");
-    return data.choices?.[0]?.message?.content || "";
+    
+    try {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+          "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+          "X-Title": "Clarco Mada Digital - Plateforme de Mise en Relation"
+        },
+        body: JSON.stringify({
+          model,
+          messages: opts.messages,
+          temperature: opts.temperature ?? 0.5,
+          max_tokens: opts.max_tokens ?? 800,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('OpenRouter API error:', {
+          status: res.status,
+          statusText: res.statusText,
+          error: errorData
+        });
+        throw new Error(errorData?.error?.message || `OpenRouter error: ${res.status} ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || "";
+    } catch (error) {
+      console.error('Error calling OpenRouter API:', error);
+      // Fallback to mock response in case of error
+      return mockCompletion(opts.messages);
+    }
   }
 
   return mockCompletion(opts.messages);
