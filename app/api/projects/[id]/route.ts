@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { notificationService } from '@/services/notificationService';
 
 export async function GET(
   req: Request,
@@ -199,16 +200,33 @@ export async function PUT(
         typeof parsedRating === 'number' &&
         (existingProject.freelancerRating === null || typeof existingProject.freelancerRating === 'undefined')
       ) {
-        const profile = await tx.userProfile.findUnique({ where: { userId: project.assignedFreelancerId } });
+        const profile = await tx.userProfile.findUnique({
+          where: { userId: project.assignedFreelancerId },
+        });
+
         if (profile) {
-          const currentRating = profile.rating ?? 0;
-          const currentCount = profile.ratingCount ?? 0;
-          const newAvg = ((currentRating * currentCount) + parsedRating) / (currentCount + 1);
+          const newRatingCount = (profile.ratingCount || 0) + 1;
+          const newRating = Math.round(
+            ((profile.rating || 0) * (profile.ratingCount || 0) + parsedRating) / newRatingCount
+          );
+
           await tx.userProfile.update({
             where: { userId: project.assignedFreelancerId },
             data: {
-              rating: newAvg,
-              ratingCount: { increment: 1 },
+              rating: newRating,
+              ratingCount: newRatingCount,
+            },
+          });
+
+          // Envoyer une notification au freelance
+          await tx.notification.create({
+            data: {
+              userId: project.assignedFreelancerId,
+              type: 'REVIEW',
+              title: 'Nouvel avis reçu',
+              message: `Vous avez reçu une note de ${parsedRating}/5 pour votre travail sur le projet "${existingProject.title}".`,
+              relatedId: existingProject.id,
+              relatedType: 'PROJECT',
             },
           });
         }

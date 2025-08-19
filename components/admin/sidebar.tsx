@@ -58,11 +58,11 @@ export function Sidebar() {
   };
 
   return (
-    <div className="hidden md:flex md:flex-shrink-0">
-      <div className="flex flex-col w-64 border-r border-gray-200 dark:border-gray-800">
+    <div className="hidden md:flex fixed top-0 left-0 h-full w-64 z-40">
+      <div className="flex flex-col w-full h-full border-r border-gray-200 bg-white dark:bg-gray-800">
         <div className="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto">
-          <div className="flex items-center flex-shrink-0 px-4">
-            <h1 className="text-xl font-bold text-primary">Admin Panel</h1>
+          <div className="flex items-center flex-shrink-0 px-6 mb-6">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Admin Panel</h1>
           </div>
           <div className="mt-5 flex-1 flex flex-col">
             <nav className="flex-1 px-2 space-y-1">

@@ -25,7 +25,9 @@ export default function RootLayout({
           <ThemeProvider defaultTheme="dark" attribute="class" enableSystem>
             {/* Header */}
             <Header />
-            {children}
+            <main className="pt-16">
+              {children}
+            </main>
             {/* Footer */}
             <Footer />
           </ThemeProvider>

@@ -79,7 +79,7 @@ export default function PricingPage() {
 
           {/* Formule premium */}
           <div className="flex flex-col p-8 rounded-2xl bg-primary/5 border border-primary/20 shadow-lg relative overflow-hidden">
-            <div className="absolute top-0 right-0 bg-primary text-purple text-xs font-semibold px-3 py-1 rounded-bl-lg">
+            <div className="absolute top-0 right-0 bg-primary text-red-500 text-xs font-semibold px-3 py-1 rounded-bl-lg">
               Populaire
             </div>
             <div className="flex-1">

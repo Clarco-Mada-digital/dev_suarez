@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -197,14 +198,14 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <Button asChild className="w-full">
-                      <a href={`/projects/${project.id}/edit`}>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                        </svg>
-                        Modifier le projet
-                      </a>
-                    </Button>
+                    {/* Bouton Modifier - Seulement pour le propriétaire ou l'admin */}
+                    {isAdmin || project.clientId === userId ? (
+                      <Button asChild className="mt-4">
+                        <Link href={`/projects/${project.id}/edit`}>
+                          {isAdmin && project.clientId !== userId ? 'Modifier (Admin)' : 'Modifier le projet'}
+                        </Link>
+                      </Button>
+                    ) : null}
                   </div>
                 </CardContent>
               </Card>

@@ -15,11 +15,11 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar />
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 pl-64 w-full">
         <AdminNavbar user={session.user} />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto mt-16 p-6">
           {children}
         </main>
       </div>

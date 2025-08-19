@@ -33,8 +33,26 @@ model User {
   profile             UserProfile?
   quoteRequestsAsClient     QuoteRequest[] @relation("ClientQuoteRequests")
   quoteRequestsAsFreelancer QuoteRequest[] @relation("FreelancerQuoteRequests")
+  notifications              Notification[]
   
   @@map("users")
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // 'REVIEW', 'MESSAGE', 'SYSTEM', etc.
+  title       String
+  message     String
+  read        Boolean  @default(false)
+  relatedId   String?  // ID lié à la notification (ex: ID du projet, de l'évaluation, etc.)
+  relatedType String?  // Type de l'élément lié (ex: 'PROJECT', 'REVIEW', etc.)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, read])
+  @@map("notifications")
 }
 
 model Account {

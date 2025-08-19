@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Home, Users, DollarSign, Shield, FileText } from 'lucide-react';
+import { Briefcase, Home, Users, DollarSign, Shield, FileText, Info, Mail } from 'lucide-react';
 import MyUserButton from "@/components/MyUserButton";
+import { SimpleNotificationBell } from "@/components/notifications/SimpleNotificationBell";
 
 export default function MainNav() {
   const pathname = usePathname();
@@ -33,6 +34,11 @@ export default function MainNav() {
       label: "Tarifs",
       icon: <DollarSign className="h-4 w-4 mr-2" />
     },
+    { 
+      href: "/contact", 
+      label: "Contact",
+      icon: <Mail className="h-4 w-4 mr-2" />
+    },
   ];
 
   return (
@@ -52,24 +58,25 @@ export default function MainNav() {
             {link.label}
           </Link>
         ))}
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              pathname.startsWith('/admin')
+                ? 'bg-accent text-accent-foreground'
+                : 'text-foreground/70 hover:bg-accent/50 hover:text-foreground'
+            }`}
+          >
+            <Shield className="h-4 w-4 mr-2" />
+            Admin
+          </Link>
+        )}
+        
       </div>
 
       <div className="flex-1 flex items-center justify-end space-x-4">
         {status === 'authenticated' ? (
           <>
-            {isAdmin && (
-              <Link
-                href="/admin"
-                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  pathname.startsWith('/admin')
-                    ? 'bg-accent text-accent-foreground'
-                    : 'text-foreground/70 hover:bg-accent/50 hover:text-foreground'
-                }`}
-              >
-                <Shield className="h-4 w-4 mr-2" />
-                Admin
-              </Link>
-            )}
             <Link 
               href="/quotes" 
               className="hidden md:flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors text-foreground/70 hover:bg-accent/50 hover:text-foreground"

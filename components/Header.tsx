@@ -5,6 +5,7 @@ import ThemeToggle from "./theme/ThemeToggle"
 import Logo from "./Logo"
 import HamburgerMenu from "./HamburgerMenu"
 import MainNav from "./navigation/MainNav"
+import { SimpleNotificationBell } from "./notifications/SimpleNotificationBell"
 
 const Header = () => {
   return (
@@ -21,6 +22,7 @@ const Header = () => {
           
           <div className="flex items-center space-x-2">
             <ThemeToggle />
+            <SimpleNotificationBell />
             <div className="md:hidden ml-2">
               <HamburgerMenu />
             </div>

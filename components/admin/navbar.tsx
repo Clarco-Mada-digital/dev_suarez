@@ -35,9 +35,9 @@ export function AdminNavbar({ user }: AdminNavbarProps) {
   };
 
   return (
-    <header className="bg-white shadow-sm dark:bg-gray-800">
-      <div className="px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+    <header className="bg-white dark:bg-gray-800 shadow-sm fixed top-0 right-0 left-64 z-30">
+      <div className="px-6">
+        <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <Button
               variant="ghost"
@@ -52,11 +52,9 @@ export function AdminNavbar({ user }: AdminNavbarProps) {
               )}
               <span className="sr-only">Ouvrir le menu</span>
             </Button>
-            <div className="flex-shrink-0 flex items-center">
-              <h1 className="text-xl font-bold text-primary hidden md:block">
-                Tableau de bord
-              </h1>
-            </div>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white ml-4">
+              Tableau de bord
+            </h1>
           </div>
           
           <div className="flex-1 px-4 flex justify-center lg:ml-6 lg:justify-end">
