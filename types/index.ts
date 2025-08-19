@@ -67,8 +67,8 @@ export interface UserProfile {
 export interface CardUserProps {
   id: string;
   name: string;
-  jobTitle: string;
-  skills: string[];
+  jobTitle?: string;
+  skills: (string | { name: string })[];
   avatarUrl: string;
   availability: boolean;
   rating?: number;

@@ -4,11 +4,13 @@ import Link from 'next/link';
 import React from 'react';
 import type { CardUserProps } from '@/types';
 
+type SkillType = string | { name: string };
+
 const CardUser: React.FC<CardUserProps> = ({
   id,
   name,
-  jobTitle,
-  skills,
+  jobTitle = '',
+  skills = [],
   avatarUrl,
   availability,
   rating = 0,
@@ -47,7 +49,7 @@ const CardUser: React.FC<CardUserProps> = ({
         ) : (
           <div className="w-80 h-48 bg-gray-200 flex items-center justify-center">
             <span className="text-gray-500 text-4xl font-bold">
-              {name.split(' ').map(n => n[0]).join('')}
+              {name ? name.split(' ').map(n => n[0] || '').join('') : 'U'}
             </span>
           </div>
         )}
@@ -60,9 +62,9 @@ const CardUser: React.FC<CardUserProps> = ({
       {/* Corps de la carte */}
       <div className="p-4 flex flex-col flex-grow">
         <div className="flex justify-between items-start mb-2">
-          <Link href={`/profile/${id}`} className="hover:underline">
-            <h3 className="text-lg font-semibold text-foreground ellipsis">{name}</h3>
-            <p className="text-sm text-muted-foreground">{jobTitle}</p>
+          <Link href={`/profile/${id || ''}`} className="hover:underline">
+            <h3 className="text-lg font-semibold text-foreground ellipsis">{name || 'Utilisateur sans nom'}</h3>
+            <p className="text-sm text-muted-foreground">{jobTitle || 'Freelance'}</p>
           </Link>
           
           {(rating > 0) && ((ratingCount ?? 0) > 0) && (
@@ -84,7 +86,7 @@ const CardUser: React.FC<CardUserProps> = ({
                   key={index}
                   className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary"
                 >
-                  {typeof skill === 'string' ? skill : 'Compétence'}
+                  {typeof skill === 'string' ? skill : skill.name || 'Compétence'}
                 </span>
               ))}
               {skills.length > 4 && (
@@ -121,7 +123,7 @@ const CardUser: React.FC<CardUserProps> = ({
             <span className="text-muted-foreground">{completedProjectsCount} projets</span>
           </div>
           <Link 
-            href={`/profile/${id}`}
+            href={`/profile/${id || ''}`}
             className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
           >
             Voir le profil →

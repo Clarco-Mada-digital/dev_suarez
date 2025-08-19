@@ -14,7 +14,7 @@ export interface FreelancerCardProps {
     location: string
     available: boolean
     image: string
-    hourlyRate: number
+    hourlyRate: number | null | undefined
   }
 }
 

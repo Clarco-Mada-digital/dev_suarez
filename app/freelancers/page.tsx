@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Briefcase, ArrowUp, ArrowDown, Search, Filter, MapPin, Star, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -35,6 +35,11 @@ export default function FreelancersPage() {
   const [availabilityFilter, setAvailabilityFilter] = useState<boolean | null>(null);
   const [sortBy, setSortBy] = useState<'rating' | 'hourlyRate' | 'completedProjects'>('rating');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  
+  // États pour la pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(9); // 9 cartes par page (3x3 grid)
+  const totalPages = Math.ceil(filteredFreelancers.length / itemsPerPage);
 
   // Effet pour filtrer et trier les freelances
   useEffect(() => {
@@ -104,7 +109,35 @@ export default function FreelancersPage() {
     });
     
     setFilteredFreelancers(result);
+    // Réinitialiser à la première page lorsque les filtres changent
+    setCurrentPage(1);
   }, [freelancers, searchQuery, selectedCategories, minHourlyRate, maxHourlyRate, availabilityFilter, sortBy, sortOrder, isLoading]);
+
+  // Calculer les freelances à afficher pour la page courante
+  const currentFreelancers = useMemo(() => {
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    return filteredFreelancers.slice(indexOfFirstItem, indexOfLastItem);
+  }, [currentPage, itemsPerPage, filteredFreelancers]);
+
+  // Changer de page
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  
+  // Aller à la page suivante
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+  
+  // Aller à la page précédente
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   // Chargement initial des freelances
   useEffect(() => {
@@ -114,7 +147,23 @@ export default function FreelancersPage() {
         if (!response.ok) {
           throw new Error('Erreur lors du chargement des freelances');
         }
-        const data = await response.json();
+        let data = await response.json();
+        
+        // S'assurer que chaque freelance a les champs nécessaires pour CardUser
+        data = data.map((freelancer: any) => ({
+          ...freelancer,
+          avatarUrl: freelancer.avatarUrl || freelancer.image || '/default-avatar.png',
+          jobTitle: freelancer.jobTitle || 'Freelance',
+          skills: Array.isArray(freelancer.skills) ? freelancer.skills : [],
+          availability: freelancer.availability || false,
+          rating: freelancer.rating || 0,
+          ratingCount: freelancer.ratingCount || 0,
+          hourlyRate: freelancer.hourlyRate || 0,
+          location: freelancer.location || '',
+          completedProjectsCount: freelancer.completedProjectsCount || 0,
+        }));
+        
+        console.log('Données des freelances formatées:', data);
         setFreelancers(data);
         setFilteredFreelancers(data);
       } catch (err) {
@@ -244,21 +293,16 @@ export default function FreelancersPage() {
           </Card>
         </div>
 
-        {/* Liste des freelances */}
+        {/* Contenu principal */}
         <div className="flex-1">
-          {/* En-tête avec compteur et tri */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <div className="text-muted-foreground">
-              {filteredFreelancers.length} {filteredFreelancers.length > 1 ? 'freelances trouvés' : 'freelance trouvé'}
-            </div>
-            
+          {/* En-tête avec tri */}
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold">
+              {filteredFreelancers.length} freelance{filteredFreelancers.length !== 1 ? 's' : ''} trouvé{filteredFreelancers.length !== 1 ? 's' : ''}
+            </h2>
             <div className="flex items-center">
-              <span className="mr-2 text-sm text-muted-foreground">Trier par :</span>
-              <Select 
-                value={sortBy}
-                onValueChange={(value) => setSortBy(value as 'rating' | 'hourlyRate' | 'completedProjects')}
-              >
-                <SelectTrigger className="w-48">
+              <Select value={sortBy} onValueChange={(value: 'rating' | 'hourlyRate' | 'completedProjects') => setSortBy(value)}>
+                <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Trier par" />
                 </SelectTrigger>
                 <SelectContent>
@@ -277,34 +321,116 @@ export default function FreelancersPage() {
               </Button>
             </div>
           </div>
-          
-          {/* Grille des freelances */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
-            {filteredFreelancers.length > 0 ? (
-              filteredFreelancers.map((freelancer) => (
-                <CardUser
+
+          {/* Liste des freelances */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {currentFreelancers.length > 0 ? (
+              currentFreelancers.map((freelancer) => (
+                <CardUser 
                   key={freelancer.id}
                   id={freelancer.id}
                   name={freelancer.name}
                   jobTitle={freelancer.jobTitle || 'Freelance'}
-                  skills={freelancer.skills}
-                  avatarUrl={freelancer.image || ''}
-                  availability={freelancer.availability}
+                  skills={freelancer.skills || []}
+                  avatarUrl={freelancer.avatarUrl || ''}
+                  availability={freelancer.availability || false}
                   rating={freelancer.rating}
                   ratingCount={freelancer.ratingCount}
-                  hourlyRate={freelancer.hourlyRate || 0}
-                  location={freelancer.location || 'Localisation non spécifiée'}
+                  hourlyRate={freelancer.hourlyRate ?? 0}
+                  location={freelancer.location || 'Non spécifié'}
                   completedProjects={freelancer.completedProjectsCount}
                 />
               ))
             ) : (
-              <div className="col-span-full text-center py-12">
+              <div className="col-span-3 text-center py-12">
                 <Briefcase className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-xl font-medium mb-2">Aucun freelance trouvé</h3>
                 <p className="text-muted-foreground">Essayez de modifier vos critères de recherche</p>
               </div>
             )}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-sm text-muted-foreground">
+                Affichage de <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> à{' '}
+                <span className="font-medium">
+                  {Math.min(currentPage * itemsPerPage, filteredFreelancers.length)}
+                </span>{' '}
+                sur <span className="font-medium">{filteredFreelancers.length}</span> freelances
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={prevPage}
+                  disabled={currentPage === 1}
+                  className="px-4"
+                >
+                  Précédent
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={pageNum === currentPage ? "default" : "outline"}
+                        size="sm"
+                        className={`w-10 h-10 p-0 ${pageNum === currentPage ? 'font-bold' : ''}`}
+                        onClick={() => {
+                          setCurrentPage(pageNum);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                  
+                  {totalPages > 5 && currentPage < totalPages - 2 && (
+                    <span className="px-2">...</span>
+                  )}
+                  
+                  {totalPages > 5 && currentPage < totalPages - 2 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-10 h-10 p-0"
+                      onClick={() => {
+                        setCurrentPage(totalPages);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      {totalPages}
+                    </Button>
+                  )}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={nextPage}
+                  disabled={currentPage === totalPages}
+                  className="px-4"
+                >
+                  Suivant
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </main>
