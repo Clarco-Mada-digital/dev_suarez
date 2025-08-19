@@ -4,10 +4,21 @@ import Link from 'next/link';
 import { Button } from './ui/button';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { User, LogOut, UserCircle, Settings } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const user = session?.user;
 
   return (
     <nav className="bg-white shadow-sm">
@@ -65,13 +76,49 @@ export default function Navbar() {
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
             {status === 'authenticated' ? (
               <div className="ml-3 relative">
-                <Button
-                  variant="outline"
-                  className="text-sm"
-                  onClick={() => signOut({ callbackUrl: '/sign-in' })}
-                >
-                  Déconnexion
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user?.image || ''} alt={user?.name || 'User'} />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                          {user?.name?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user?.name || 'Utilisateur'}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user?.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <Link href="/profile">
+                      <DropdownMenuItem className="cursor-pointer">
+                        <UserCircle className="mr-2 h-4 w-4" />
+                        <span>Mon Profil</span>
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link href="/settings">
+                      <DropdownMenuItem className="cursor-pointer">
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Paramètres</span>
+                      </DropdownMenuItem>
+                    </Link>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      className="cursor-pointer text-red-600 focus:text-red-600"
+                      onClick={() => signOut({ callbackUrl: '/sign-in' })}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Déconnexion</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             ) : (
               <div className="ml-3 space-x-4">

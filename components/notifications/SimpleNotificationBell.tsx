@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Bell, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Notification, NotificationType } from '@/services/notificationService';
+import { NotificationData } from '@/services/notificationService';
+type NotificationType = 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR' | 'MESSAGE' | 'REVIEW' | 'SYSTEM' | 'PROJECT' | 'BID';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +20,7 @@ import { cn } from '@/lib/utils';
 
 
 export function SimpleNotificationBell() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -107,7 +108,7 @@ export function SimpleNotificationBell() {
     }
   };
 
-  const handleNotificationClick = async (notification: Notification) => {
+  const handleNotificationClick = async (notification: NotificationData) => {
     if (!notification.read) {
       await markAsRead(notification.id);
     }
@@ -181,7 +182,7 @@ export function SimpleNotificationBell() {
                         </h4>
                         <time
                           className="text-xs text-muted-foreground"
-                          dateTime={notification.createdAt}
+                          dateTime={new Date(notification.createdAt).toISOString()}
                         >
                           {formatDistanceToNow(new Date(notification.createdAt), {
                             addSuffix: true,

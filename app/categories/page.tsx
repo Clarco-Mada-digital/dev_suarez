@@ -25,23 +25,37 @@ const CategoriesPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchCategories = async () => {
       try {
         const response = await fetch('/api/categories');
-        if (!response.ok) {
-          throw new Error('Erreur lors du chargement des catégories');
-        }
         const data = await response.json();
-        setCategories(data);
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Erreur lors du chargement des catégories');
+        }
+        
+        if (isMounted) {
+          setCategories(Array.isArray(data) ? data : []);
+        }
       } catch (error) {
         console.error('Erreur:', error);
-        setError('Impossible de charger les catégories. Veuillez réessayer plus tard.');
+        if (isMounted) {
+          setError('Impossible de charger les catégories. Veuillez réessayer plus tard.');
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchCategories();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const filteredCategories = searchTerm

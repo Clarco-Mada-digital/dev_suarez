@@ -22,7 +22,6 @@ const Header = () => {
           
           <div className="flex items-center space-x-2">
             <ThemeToggle />
-            <SimpleNotificationBell />
             <div className="md:hidden ml-2">
               <HamburgerMenu />
             </div>

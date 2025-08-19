@@ -153,7 +153,7 @@ export const notificationService = {
     const totalPages = Math.ceil(total / limit);
 
     return {
-      data: notifications as unknown as Notification[],
+      data: notifications as unknown as NotificationData[],
       pagination: {
         total,
         page,

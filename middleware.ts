@@ -68,10 +68,14 @@ export async function middleware(request: NextRequest) {
     // Continuer même en cas d'erreur
   }
 
-  // Vérifier l'authentification uniquement pour les routes protégées
-  const session = await auth();
-  const isLoggedIn = !!session?.user;
-  
+  // Routes d'API qui nécessitent une authentification
+  const isApiAuthRoute = [
+    '/api/admin',
+    '/api/profile',
+    '/api/projects',
+    '/api/bids',
+  ].some(path => request.nextUrl.pathname.startsWith(path));
+
   // Pages d'authentification
   const isAuthPage = ['/sign-in', '/sign-up'].some(path => 
     request.nextUrl.pathname.startsWith(path)
@@ -84,10 +88,44 @@ export async function middleware(request: NextRequest) {
     '/categories',
     '/api/trpc',
     '/api/auth',
+    '/api/categories',
   ].some(path => request.nextUrl.pathname.startsWith(path));
 
   // Routes d'administration qui nécessitent le rôle ADMIN
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
+  
+  // Vérifier l'authentification uniquement pour les routes protégées
+  if (isApiAuthRoute || isAdminRoute) {
+    const session = await auth();
+    const isLoggedIn = !!session?.user;
+    const isAdmin = session?.user?.role === 'ADMIN';
+
+    // Si l'utilisateur n'est pas connecté et tente d'accéder à une route protégée
+    if (!isLoggedIn) {
+      if (isApiAuthRoute) {
+        return new NextResponse(
+          JSON.stringify({ error: 'Non authentifié', message: 'Veuillez vous connecter pour accéder à cette ressource' }),
+          { status: 401, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      return NextResponse.redirect(new URL('/sign-in', request.url));
+    }
+
+    // Vérifier le rôle administrateur si nécessaire
+    if ((isAdminRoute || request.nextUrl.pathname.startsWith('/api/admin')) && !isAdmin) {
+      if (isApiAuthRoute) {
+        return new NextResponse(
+          JSON.stringify({ error: 'Accès refusé', message: 'Vous devez être administrateur pour accéder à cette ressource' }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+  }
+  
+  // Vérifier si l'utilisateur est connecté
+  const session = await auth();
+  const isLoggedIn = !!session?.user;
   
   // Si l'utilisateur est déjà connecté et tente d'accéder à une page d'authentification
   if (isAuthPage && isLoggedIn) {

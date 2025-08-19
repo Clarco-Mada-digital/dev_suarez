@@ -1,4 +1,4 @@
-import NextAuth from "next-auth"
+import NextAuth, { type DefaultSession, type NextAuthConfig } from "next-auth"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import Credentials from "next-auth/providers/credentials"
@@ -7,7 +7,25 @@ import type { User as NextAuthUser } from "next-auth"
 
 type UserRole = 'ADMIN' | 'USER' | 'FREELANCER' | 'CLIENT'
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+// Déclaration des types pour NextAuth
+declare module "next-auth" {
+  interface User {
+    id: string;
+    role?: UserRole;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  }
+
+  interface Session {
+    user: {
+      id: string;
+      role?: UserRole;
+    } & DefaultSession["user"]
+  }
+}
+
+const authConfig: NextAuthConfig = {
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   pages: {
@@ -57,22 +75,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async session({ session, token }) {
-      if (token.sub && session.user) {
-        session.user.id = token.sub
-      }
-      if (token.role && session.user) {
+      if (token) {
+        session.user.id = token.id as string
         session.user.role = token.role as UserRole
       }
       return session
     },
     async jwt({ token, user }) {
       if (user) {
-        token.sub = user.id
-        token.role = user.role
+        token.id = user.id
+        token.role = user.role as UserRole
       }
       return token
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === "development",
-})
+}
+
+export const { handlers, auth, signIn, signOut } = NextAuth(authConfig)

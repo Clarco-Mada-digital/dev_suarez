@@ -120,7 +120,7 @@ export default function CategoriesPage() {
 
   return (
     <div className="container mx-auto py-10">
-      <div className="flex items-center justify-between mb-6">
+      {/* <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Gestion des catégories</h1>
           <p className="text-muted-foreground">
@@ -131,7 +131,7 @@ export default function CategoriesPage() {
           <Plus className="mr-2 h-4 w-4" />
           Ajouter une catégorie
         </Button>
-      </div>
+      </div> */}
       
       <Card>
         <CardHeader>

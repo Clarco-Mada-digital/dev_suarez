@@ -1,8 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
 import { Button } from '@/components/ui/button'
 import { ArrowUpDown, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { EditCategoryDialog } from './edit-category-dialog'
+import { DeleteCategoryDialog } from './delete-category-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,9 +13,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useState } from 'react'
-import { DeleteCategory } from './delete-category'
-import { EditCategoryDialog } from './edit-category-dialog'
 
 export type Category = {
   id: string
@@ -68,54 +68,56 @@ export const columns: ColumnDef<Category>[] = [
   },
   {
     id: 'actions',
-    cell: ({ row, table }: { row: any, table: any }) => {
-      const category = row.original as Category
-      const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-      const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-
-      const handleSuccess = () => {
-        // Rafraîchir les données du tableau
-        if (table.options.meta?.refetchData) {
-          table.options.meta.refetchData()
-        }
-      }
-
-      return (
-        <div className="flex justify-end space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8"
-            onClick={() => setIsEditDialogOpen(true)}
-          >
-            <Pencil className="h-4 w-4" />
-            <span className="sr-only">Éditer</span>
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-red-600 hover:text-red-900 hover:bg-red-50"
-            onClick={() => setIsDeleteDialogOpen(true)}
-          >
-            <Trash2 className="h-4 w-4" />
-            <span className="sr-only">Supprimer</span>
-          </Button>
-
-          <EditCategoryDialog
-            category={category}
-            open={isEditDialogOpen}
-            onOpenChange={setIsEditDialogOpen}
-            onSuccess={handleSuccess}
-          />
-          
-          <DeleteCategory
-            categoryId={category.id}
-            categoryName={category.name}
-            onSuccess={handleSuccess}
-          />
-        </div>
-      )
-    },
+    cell: ({ row, table }: { row: any, table: any }) => (
+      <CategoryActions category={row.original as Category} table={table} />
+    )
   },
 ]
+
+function CategoryActions({ category, table }: { category: Category, table: any }) {
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+
+  const handleSuccess = () => {
+    // Rafraîchir les données du tableau
+    if (table.options.meta?.refetchData) {
+      table.options.meta.refetchData()
+    }
+  }
+
+  return (
+    <div className="flex justify-end space-x-2">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8"
+        onClick={() => setIsEditDialogOpen(true)}
+      >
+        <Pencil className="h-4 w-4" />
+        <span className="sr-only">Éditer</span>
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 text-destructive hover:text-destructive/90"
+        onClick={() => setIsDeleteDialogOpen(true)}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+
+      <EditCategoryDialog
+        category={category}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onSuccess={handleSuccess}
+      />
+
+      <DeleteCategoryDialog
+        category={category}
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onSuccess={handleSuccess}
+      />
+    </div>
+  )
+}

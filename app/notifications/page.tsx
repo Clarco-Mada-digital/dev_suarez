@@ -15,11 +15,18 @@ export default async function NotificationsPage({
   }
 
   const currentPage = Number(searchParams?.page) || 1;
-  const { data: notifications, pagination } = await notificationService.getUserNotifications(
+  const { data, pagination } = await notificationService.getUserNotifications(
     session.user.id,
     currentPage,
     20
   );
+
+  // Convertir les dates en chaînes de caractères
+  const notifications = data.map(notification => ({
+    ...notification,
+    createdAt: notification.createdAt.toISOString(),
+    updatedAt: notification.updatedAt.toISOString()
+  }));
 
   return (
     <div className="container mx-auto px-4 py-8">
