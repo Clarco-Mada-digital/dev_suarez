@@ -150,6 +150,8 @@ model ProjectCategory {
   name        String    @unique @map("name")
   description String?   @map("description")
   icon        String?   @map("icon")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
   projects    Project[]
   
   // Le nom de la table dans la base de données

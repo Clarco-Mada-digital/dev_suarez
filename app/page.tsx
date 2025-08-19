@@ -121,7 +121,7 @@ export default function Home() {
           Contactez nous des maintenant pour recevoir des devis pour votre projets.
         </span>
         <Link href="/contact" className='w-36 m-auto'>
-          <Button variant="gradient">Demander des devies</Button>
+          <Button variant="gradient">Contactez-nous</Button>
         </Link>
       </div>
 

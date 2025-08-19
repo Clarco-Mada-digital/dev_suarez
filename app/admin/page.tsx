@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTable } from '@/components/admin/users/data-table';
 import { columns } from '@/components/admin/users/columns';
+import Link from 'next/link';
 
 // Données de démonstration - À remplacer par des appels API
 const stats = [
@@ -106,12 +107,20 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Aperçu</TabsTrigger>
-          <TabsTrigger value="users">Utilisateurs</TabsTrigger>
-          <TabsTrigger value="reports">Rapports</TabsTrigger>
-        </TabsList>
-        
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="overview">Aperçu</TabsTrigger>
+            <TabsTrigger value="users">Utilisateurs</TabsTrigger>
+            <TabsTrigger value="categories">Catégories</TabsTrigger>
+          </TabsList>
+          <Button asChild>
+            <Link href="/admin/categories/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Nouvelle catégorie
+            </Link>
+          </Button>
+        </div>
+
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
@@ -144,7 +153,7 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card className="col-span-3">
               <CardHeader>
                 <CardTitle>Statut des projets</CardTitle>
@@ -173,7 +182,7 @@ export default function AdminDashboard() {
             </Card>
           </div>
         </TabsContent>
-        
+
         <TabsContent value="users" className="space-y-4">
           <Card>
             <CardHeader>
@@ -191,6 +200,31 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <DataTable columns={columns} data={users} onUserUpdated={fetchUsers} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="categories" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Gestion des catégories</CardTitle>
+              <CardDescription>
+                Gérez les catégories de projets disponibles sur la plateforme.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <Tag className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">Gérez vos catégories</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Créez et gérez les catégories de projets pour organiser votre plateforme.
+                </p>
+                <Button className="mt-4" asChild>
+                  <Link href="/admin/categories">
+                    Voir toutes les catégories
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
