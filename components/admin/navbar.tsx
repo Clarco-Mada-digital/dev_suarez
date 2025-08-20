@@ -35,7 +35,7 @@ export function AdminNavbar({ user }: AdminNavbarProps) {
   };
 
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-sm fixed top-0 right-0 left-64 z-30">
+    <header className="bg-white dark:bg-gray-800 shadow-sm fixed top-0 right-0 left-64 z-10">
       <div className="px-6">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">

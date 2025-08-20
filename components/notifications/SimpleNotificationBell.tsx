@@ -25,9 +25,14 @@ export function SimpleNotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Charger les notifications non lues au montage
+  // Charger les notifications non lues au montage et vérifier périodiquement
   useEffect(() => {
     fetchUnreadCount();
+    
+    // Vérifier les nouvelles notifications toutes les 30 secondes
+    const interval = setInterval(fetchUnreadCount, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   // Charger les notifications lorsque le menu est ouvert
@@ -45,10 +50,13 @@ export function SimpleNotificationBell() {
       const { user } = await session.json();
       if (!user?.id) return;
       
-      const count = await fetch('/api/notifications/unread-count').then(res => res.json());
-      setUnreadCount(count?.count || 0);
+      const response = await fetch('/api/notifications/unread-count');
+      if (response.ok) {
+        const data = await response.json();
+        setUnreadCount(data.count || 0);
+      }
     } catch (error) {
-      console.error('Error fetching unread count:', error);
+      console.error('Erreur lors du chargement du nombre de notifications non lues:', error);
     }
   };
 
@@ -63,11 +71,12 @@ export function SimpleNotificationBell() {
       
       const res = await fetch(`/api/notifications?page=1&limit=5`);
       if (res.ok) {
-        const data = await res.json();
-        setNotifications(data.notifications || []);
+        const response = await res.json();
+        // Utiliser response.data au lieu de response.notifications
+        setNotifications(response.data || []);
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.error('Erreur lors du chargement des notifications:', error);
     } finally {
       setIsLoading(false);
     }
@@ -75,19 +84,22 @@ export function SimpleNotificationBell() {
 
   const markAsRead = async (id: string) => {
     try {
-      await fetch(`/api/notifications/${id}`, {
+      const response = await fetch(`/api/notifications/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ read: true }),
       });
       
-      setNotifications(prev =>
-        prev.map(n => (n.id === id ? { ...n, read: true } : n))
-      );
-      
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      if (response.ok) {
+        setNotifications(prev =>
+          prev.map(n => (n.id === id ? { ...n, read: true } : n))
+        );
+        
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      } else {
+        console.error('Erreur lors du marquage de la notification comme lue');
+      }
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('Erreur lors du marquage de la notification comme lue:', error);
     }
   };
 
@@ -130,7 +142,7 @@ export function SimpleNotificationBell() {
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-medium text-white">
+            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}

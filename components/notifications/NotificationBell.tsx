@@ -17,6 +17,7 @@ import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { notificationApi } from '@/services/api/notificationApi';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 type Notification = {
   id: string;
@@ -29,29 +30,73 @@ type Notification = {
 };
 
 export function NotificationBell() {
+  const { data: session, status } = useSession();
+  const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
+  
+  // S'assurer que le composant est monté côté client
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const fetchNotifications = async () => {
     try {
-      const data = await fetch('/api/notifications').then(res => res.json());
-      setNotifications(data.notifications);
-      setUnreadCount(data.unreadCount);
+      // Récupérer les notifications
+      const notificationsRes = await fetch('/api/notifications');
+      const notificationsData = await notificationsRes.json();
+      
+      // Récupérer le nombre de notifications non lues
+      const unreadRes = await fetch('/api/notifications/unread-count');
+      const unreadData = await unreadRes.json();
+      
+      setNotifications(notificationsData.data || []);
+      setUnreadCount(unreadData.count || 0);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
   };
 
   useEffect(() => {
+    // Ne rien faire côté serveur ou si la session n'est pas chargée
+    if (status !== 'authenticated' || !isClient) return;
+    
     // Charger les notifications initiales
     fetchNotifications();
 
-    // Configurer le polling pour les nouvelles notifications (toutes les 30 secondes)
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    // Configurer le polling pour les nouvelles notifications (toutes les 5 secondes)
+    const interval = setInterval(fetchNotifications, 5000);
+    
+    // Écouter les événements personnalisés pour les mises à jour en temps réel
+    const handleUpdateUnreadCount = (event: MessageEvent) => {
+      if (event.data?.type === 'UPDATE_UNREAD_COUNT') {
+        setUnreadCount(event.data.count);
+      }
+    };
+    
+    // Gérer les nouvelles notifications
+    const handleNewNotification = async (event: Event) => {
+      const customEvent = event as CustomEvent<{ userId: string }>;
+      // Vérifier si la notification est pour l'utilisateur actuel
+      if (session?.user?.id === customEvent.detail?.userId) {
+        // Recharger les notifications
+        await fetchNotifications();
+      }
+    };
+    
+    // Ajouter les écouteurs d'événements
+    window.addEventListener('message', handleUpdateUnreadCount);
+    window.addEventListener('notification:new', handleNewNotification as EventListener);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('message', handleUpdateUnreadCount);
+      window.removeEventListener('notification:new', handleNewNotification as EventListener);
+    };
+  }, [session?.user?.id, status, isClient]);
 
   const handleNotificationClick = async (notification: Notification) => {
     try {
@@ -80,13 +125,35 @@ export function NotificationBell() {
 
   const markAllAsRead = async () => {
     try {
-      await fetch('/api/notifications', { method: 'PUT' });
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-      setUnreadCount(0);
+      const response = await fetch('/api/notifications', { 
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        setUnreadCount(0);
+        
+        // Émettre un événement pour mettre à jour d'autres instances
+        window.dispatchEvent(new CustomEvent('notifications:all-read'));
+      } else {
+        console.error('Échec du marquage de toutes les notifications comme lues :', await response.text());
+      }
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
+      console.error('Erreur lors du marquage de toutes les notifications comme lues :', error);
     }
   };
+
+  // Ne rien afficher côté serveur ou pendant le chargement
+  if (!isClient || status === 'loading') {
+    return (
+      <Button variant="ghost" size="icon" className="relative" disabled>
+        <Bell className="h-5 w-5" />
+      </Button>
+    );
+  }
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>

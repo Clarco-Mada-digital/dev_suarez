@@ -59,20 +59,20 @@ export function NotificationList({
       const response = await fetch(`/api/notifications?page=${nextPage}`);
       
       if (!response.ok) {
-        throw new Error('Failed to fetch notifications');
+        throw new Error('Échec du chargement des notifications');
       }
       
       const { data: newNotifications, pagination: newPagination } = await response.json();
       
-      setNotifications(prev => [...prev, ...newNotifications]);
+      setNotifications(prev => [...prev, ...(newNotifications || [])]);
       setPagination({
         ...newPagination,
         page: nextPage,
         hasMore: nextPage < newPagination.totalPages
       });
     } catch (error) {
-      console.error('Failed to load more notifications:', error);
-      // You might want to show an error message to the user here
+      console.error('Échec du chargement des notifications supplémentaires:', error);
+      // Afficher un message d'erreur à l'utilisateur
     } finally {
       setIsLoading(false);
     }
@@ -88,10 +88,10 @@ export function NotificationList({
       });
       
       if (!response.ok) {
-        throw new Error('Failed to mark notification as read');
+        throw new Error('Échec du marquage de la notification comme lue');
       }
       
-      // Update the local state to reflect the change
+      // Mettre à jour l'état local pour refléter le changement
       setNotifications(prev => 
         prev.map(notification => 
           notification.id === notificationId 
@@ -99,8 +99,18 @@ export function NotificationList({
             : notification
         )
       );
+      
+      // Rafraîchir le compteur de notifications non lues
+      const unreadRes = await fetch('/api/notifications/unread-count');
+      if (unreadRes.ok) {
+        const { count } = await unreadRes.json();
+        // Mettre à jour le compteur dans le composant parent si nécessaire
+        if (window.parent) {
+          window.parent.postMessage({ type: 'UPDATE_UNREAD_COUNT', count }, '*');
+        }
+      }
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('Erreur lors du marquage de la notification comme lue:', error);
     }
   };
 

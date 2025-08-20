@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Home, Users, DollarSign, Mail } from 'lucide-react';
+import { Briefcase, Home, Users, DollarSign, Mail, Info } from 'lucide-react';
 import MyUserButton from "@/components/MyUserButton";
 import { SimpleNotificationBell } from "@/components/notifications/SimpleNotificationBell";
+import { NotificationBell } from "../notifications/NotificationBell";
 
 export default function MainNav() {
   const pathname = usePathname();
@@ -38,6 +39,11 @@ export default function MainNav() {
       label: "Contact",
       icon: <Mail className="h-4 w-4 mr-2" />
     },
+    { 
+      href: "/about", 
+      label: "À propos",
+      icon: <Info className="h-4 w-4 mr-2" />
+    },
   ];
   
   return (
@@ -64,6 +70,7 @@ export default function MainNav() {
         {status === 'authenticated' ? (
           <div className="flex items-center space-x-2">
             <SimpleNotificationBell />
+            {/* <NotificationBell /> */}
             <MyUserButton />
           </div>
         ) : (

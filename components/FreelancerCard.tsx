@@ -46,10 +46,12 @@ export function FreelancerCard({ freelancer }: FreelancerCardProps) {
               <p className="text-muted-foreground">{freelancer.title}</p>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex items-center bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2 py-1 rounded-full text-sm">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                {freelancer.rating.toFixed(1)}
-              </div>
+              {freelancer.rating > 0 && (
+                <div className="flex items-center bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2 py-1 rounded-full text-sm">
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
+                  {freelancer.rating.toFixed(1)}
+                </div>
+              )}
               <Badge
                 variant={freelancer.available ? "default" : "secondary"}
                 className="flex items-center gap-1 text-xs"

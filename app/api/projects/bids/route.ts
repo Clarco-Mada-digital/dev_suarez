@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { notificationService } from '@/services/notificationService';
 
 export async function POST(req: Request) {
   try {
@@ -71,6 +72,39 @@ export async function POST(req: Request) {
         project: true,
       },
     });
+
+    // Envoyer une notification au client
+    try {
+      await notificationService.createNotification({
+        userId: project.clientId,
+        type: 'BID',
+        title: 'Nouvelle offre reçue',
+        message: `Vous avez reçu une nouvelle offre de ${session.user?.name || 'un freelance'} pour votre projet "${project.title}".`,
+        relatedId: bid.id,
+        relatedType: 'BID'
+      });
+
+      // Émettre un événement personnalisé pour mettre à jour le compteur
+      const event = new CustomEvent('notification:new', {
+        detail: { userId: project.clientId }
+      });
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(event);
+      }
+
+      // Envoyer une notification au freelance
+      await notificationService.createNotification({
+        userId: userId,
+        type: 'BID',
+        title: 'Offre envoyée',
+        message: `Votre offre pour le projet "${project.title}" a été envoyée avec succès.`,
+        relatedId: bid.id,
+        relatedType: 'BID'
+      });
+    } catch (error) {
+      console.error("Erreur lors de l'envoi des notifications:", error);
+      // Ne pas échouer la requête si les notifications échouent
+    }
 
     return NextResponse.json(bid);
   } catch (error) {
