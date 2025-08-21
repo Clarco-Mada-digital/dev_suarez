@@ -19,10 +19,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr">
-      <body style={comfortaa.style} className={comfortaa.variable}>
+    <html lang="fr" className={comfortaa.variable} suppressHydrationWarning>
+      <body className="antialiased">
         <Provider>
-          <ThemeProvider defaultTheme="dark" attribute="class" enableSystem>
+          <ThemeProvider 
+            attribute="class" 
+            defaultTheme="dark" 
+            enableSystem={false}
+            disableTransitionOnChange
+          >
             {/* Header */}
             <Header />
             <main className="pt-16">

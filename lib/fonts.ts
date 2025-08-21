@@ -1,7 +1,8 @@
-// Utilisation de polices système pour éviter les problèmes de chargement
-export const comfortaa = {
+import { Comfortaa } from 'next/font/google';
+
+// Configuration de la police Comfortaa
+export const comfortaa = Comfortaa({
+  subsets: ['latin'],
+  display: 'swap',
   variable: '--font-comfortaa',
-  style: {
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-  }
-};
+});
