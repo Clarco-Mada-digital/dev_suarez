@@ -47,6 +47,29 @@ model Notification {
   @@map("notifications")
 }
 
+model AnalyticsEvent {
+  id            String   @id @default(cuid())
+  eventType     String
+  path          String
+  sessionId     String
+  userId        String?
+  referrer      String?
+  userAgent     String?
+  screenWidth   Int?
+  screenHeight  Int?
+  language      String?
+  additionalData Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([eventType])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([path])
+  @@index([createdAt])
+  @@map("analytics_events")
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String

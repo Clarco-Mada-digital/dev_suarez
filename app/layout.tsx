@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import { comfortaa } from "@/lib/fonts";
 import Provider from "./Provider";
 import { Toaster } from "@/components/ui/toaster";
+import { AnalyticsProvider } from "@/components/analytics-provider";
 
 export const metadata: Metadata = {
   title: "D.S by MADA-Digital",
@@ -30,9 +31,11 @@ export default function RootLayout({
           >
             {/* Header */}
             <Header />
-            <main className="pt-16">
-              {children}
-            </main>
+            <AnalyticsProvider>
+              <main className="pt-16">
+                {children}
+              </main>
+            </AnalyticsProvider>
             {/* Footer */}
             <Footer />
           </ThemeProvider>

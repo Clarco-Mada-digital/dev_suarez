@@ -14,7 +14,7 @@ const Presentation = ({text, img, btnText, btnLink}:{text?:string, img?:string, 
   return (
     <div className={clsx(theme === 'light' ? "bg-[url('/hero.jpg')]" : "bg-[url('/hero-dark.jpg')]", " bg-bottom bg-auto bg-no-repeat h-[60vh] w-full flex items-center px-20 shadow-lg")}>
       <div className="flex justify-center items-center w-full xl:justify-between">
-        <section className='flex flex-col gap-8 text-4xl text-center xl:w-[30%] xl:text-left'>
+        <section className='flex flex-col gap-8 text-4xl text-center xl:w-[40%] xl:text-left'>
           <span>
            { text ? text : "Présentez-nous votre rêve numérique, on va le réalisé !"}
           </span>
