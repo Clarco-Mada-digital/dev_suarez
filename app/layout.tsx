@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import Header from "@/components/Header";
 import ThemeProvider from "@/components/theme/ThemeProvider";
 import Footer from "@/components/Footer";
-import { comfortaa } from "@/lib/fonts";
+import { comfortaa, inter } from "@/lib/fonts";
 import Provider from "./Provider";
 import { Toaster } from "@/components/ui/toaster";
 import { AnalyticsProvider } from "@/components/analytics-provider";
@@ -20,8 +20,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={comfortaa.variable} suppressHydrationWarning>
-      <body className="antialiased">
+    <html 
+      lang="fr" 
+      className={`${inter.variable} ${comfortaa.variable} font-sans`} 
+      suppressHydrationWarning
+    >
+      <body className="antialiased min-h-screen bg-background">
         <Provider>
           <ThemeProvider 
             attribute="class" 

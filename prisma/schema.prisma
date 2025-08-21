@@ -48,23 +48,22 @@ model Notification {
 }
 
 model AnalyticsEvent {
-  id            String   @id @default(cuid())
-  eventType     String
-  path          String
-  sessionId     String
-  userId        String?
-  referrer      String?
-  userAgent     String?
-  screenWidth   Int?
-  screenHeight  Int?
-  language      String?
+  id             String   @id @default(cuid())
+  eventType      String
+  path           String
+  sessionId      String
+  referrer       String?
+  userAgent      String?
+  screenWidth    Int?
+  screenHeight   Int?
+  language       String?
   additionalData Json?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  userId         String?
 
   @@index([eventType])
   @@index([sessionId])
-  @@index([userId])
   @@index([path])
   @@index([createdAt])
   @@map("analytics_events")
@@ -137,7 +136,7 @@ model Project {
   description          String
   budget               Float
   deadline             DateTime
-  status               ProjectStatus   @default(OPEN)
+  status               ProjectStatus   @default("OPEN")
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
   clientId             String
@@ -171,7 +170,7 @@ model ProjectBid {
   id           String    @id @default(cuid())
   amount       Float
   proposal     String
-  status       BidStatus @default(PENDING)
+  status       BidStatus @default("PENDING")
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   projectId    String
@@ -210,7 +209,7 @@ model QuoteRequest {
   budgetMin        Float?
   budgetMax        Float?
   deadline         DateTime?
-  status           QuoteStatus @default(PENDING)
+  status           QuoteStatus @default("PENDING")
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
   counterBudgetMin Float?

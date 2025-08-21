@@ -14,7 +14,10 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^1.0.0",
+    "@fontsource/comfortaa": "^5.2.6",
+    "@fontsource/inter": "^5.2.6",
     "@hookform/resolvers": "^3.9.0",
+    "@next/font": "^14.2.15",
     "@prisma/client": "^6.14.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-avatar": "^1.1.10",

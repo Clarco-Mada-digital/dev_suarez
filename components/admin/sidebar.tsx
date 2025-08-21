@@ -59,7 +59,7 @@ export function Sidebar() {
 
   return (
     <div className="hidden md:flex fixed top-0 left-0 h-full w-64 z-10">
-      <div className="flex flex-col w-full h-full border-r border-gray-200 bg-white dark:bg-gray-800 overflow-y-auto py-20">
+      <div className="flex flex-col w-full h-full border-r border-gray-200 bg-white dark:bg-gray-800 overflow-y-auto py-10">
         <div className="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto">
           <div className="flex items-center flex-shrink-0 px-6 mb-6">
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Admin Panel</h1>
